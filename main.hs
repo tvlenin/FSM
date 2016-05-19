@@ -1,7 +1,7 @@
 import Data.List
 import System.IO
 
-path = '/' : []
+groups = '/' : []
     
 main :: IO ()
 main = do

@@ -1,30 +1,37 @@
 main:: IO()
 
 main = do 
-	putStrLn "Inicio del File System"
-	body [["/"]]
-
+	body [
+			[
+				["nombre"],["1000"],["root"],["secundario1"]]
+			]
+		]
+	--body[["/"]]
+		
 body xe = do 
-	putStrLn "Las carpetas actuales son"
-	putStrLn $ show xe
-	putStrLn "Digite in para ingresar o find para buscar"
-	op <- getLine
+	putStr "$"
+	cmd <- getLine
 	
-	if op == "in" then do
-		putStrLn "ingrese el nombre de la carpeta"
+	if  head(words(cmd)) == "groupadd" && length(words(cmd))==2 then do
+		line <- getLine
+		putStrLn "a"
+	
+	else if head(words(cmd)) == "pvcreate" then do
 		line <- getLine
 		addFiles xe [line]	
-		
 	
-	else if op == "find" then do
-		putStrLn "Digite el nombre de la carpeta a buscar"
+	else if head(words(cmd)) == "vgcreate" then do
 		line <- getLine
 		findFiles xe line
 	
 	else do
 		putStrLn $ "digite el comando correcto"
-		body xe
+	body xe
 	
+	
+--addUserGroup xe = do
+	
+
 addFiles xe add  = do
 	putStrLn  "hola"
 	let tmp = xe ++ [add]
