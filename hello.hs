@@ -20,9 +20,13 @@ body userGroupList = do
 	if  head(words(op)) == "groupadd" && length(words(op))==2 then			--The sinstaxis must be correct
 		addUserGroup userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]]	--Call the function to add the new group
 	
+	else if (head(words(op)) == "show") && (head(tail(words(op))) == "groups") && length(words(op))==2 then do
+		putStrLn $ "GroupName\t\tGID\t\tAssociatedUsers"
+		showAllgroups userGroupList userGroupList
+	
 	{- 	Command : # useradd -g primaryGroup [-G secondaryGroup1 secondaryGroup2] userName
 		An user must have an primary group associated, the secondary ones are optional-}
-	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=4 then
+	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G" ) then
 		createNewUser userGroupList userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0
 				
 --	else if head(words(op)) == "pvcreate" then do
@@ -66,33 +70,53 @@ addIfNotExits userGroupList toCheck add = do
 	else do
 		addIfNotExits userGroupList (tail(toCheck)) add	
 
+showAllgroups userGroupList tmp = do
+	if( ( length(tmp)) == 0) then do
+		body userGroupList
+	else do
+		putStrLn $ ( (((tmp!!0)!!0)!!0) ++"\t\t\t"++(((tmp!!0)!!1)!!0)++"\t\t"++(show(((tmp!!0)!!2))))
+		showAllgroups userGroupList (tail(tmp))
+
+
 {-
 createNewUser <List Of Users> <args> <name>-}
 createNewUser userGroupList toCheck args name j = do
-	if ( (length(toCheck) == 0)) then do 
-		putStrLn "Se puede crear el usuario"
-		addNewUserPrimary userGroupList 0 (head(args)) (tail(args)) name
+	if ( (length(toCheck) == 0)) then do 	
+		addNewUserPrimary [] userGroupList 0 (head(args)) (tail(args)) name
 	else do
-		if ( ((length(((toCheck!!0)!!2)))-1) >= j ) then do
-			if ( (((toCheck!!0)!!2)!!j) /= name ) then do
+		if ( ((length(((toCheck!!0)!!2)))-1) >= j ) then do					--To check if we check all the names in a user group 
+			if ( (((toCheck!!0)!!2)!!j) /= name ) then do						--j+1 iterates over the same user groups to check if exits 
 				createNewUser userGroupList toCheck args name (j+1)	
-			else do
-				putStrLn "Error el usuario existe"
+			else do																--We found a user with the same name
+				putStrLn "userAdd -> Error el usuario existe"
 				body userGroupList
-		else do	
+		else do																--Start checking another user group
 			createNewUser userGroupList (tail(toCheck)) args name 0
 
-addNewUserPrimary userGroupList pos primary secondary name = do
-	if ( ( length( userGroupList!!pos ) ) == 0) then do --pos no se debe salir de aqui
-		putStrLn "The primary group does not exits"
+addNewUserPrimary userGroupList toCheck j primary secondary name = do
+	if ( ( length( toCheck ) ) == 0) then do 							--We checked the whole group names but failed
+		putStrLn "userAdd -> The primary group does not exits"
+		body userGroupList
 	else do
-		if ( ((toCheck!!0)!!0) ==  primary ) then do
-			
+		if ( (((toCheck!!0)!!0)!!0) ==  primary ) then do	--This means we found the correct group to add the user as primary 			
+			putStrLn $ (show ([ [((toCheck!!0)!!0)] ++ [((toCheck!!0)!!1)] ++ [(((toCheck!!0)!!2)++[name])] ++ [((toCheck!!0)!!3)] ]))
+			putStrLn ("ok "++(show(secondary)))
+			addNewUserSecondary [] (userGroupList++ [ [((toCheck!!0)!!0)] ++ [((toCheck!!0)!!1)] ++ [(((toCheck!!0)!!2)++[name])] ++ [((toCheck!!0)!!3)] ] ++ (tail(toCheck)) ) 0 secondary name
 		else do
-		
-		
-		
-
+			--2 casos:
+			--a. j ya se va a salir del grupo, significa que paso de grupo y lo agrego a userGroupList
+			--b. aumentar j para revisar otro usuario dentro del mismo userGroupList
+			if( ( (length (((toCheck!!0)!!2))) -1 ) >= j ) then do
+				addNewUserPrimary userGroupList toCheck (j+1) primary secondary name	
+				putStrLn "buscar el siguiente dentro del mismo grupo"
+			else do
+				addNewUserPrimary (userGroupList++[(head(toCheck))]) (tail(toCheck)) 0 primary secondary name
+			
+addNewUserSecondary userGroupList toCheck j secondary name = do
+	putStrLn "Agregando los secundarios"
+	putStrLn $ (show(toCheck))
+	body toCheck 	
+	
 -- createNewUser2 userGroupList args name = do
 -- 	if (length(args))==1 then
 -- 		verifyNewUser userGroupList userGroupList (head(args)) [] name
