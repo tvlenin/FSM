@@ -38,6 +38,9 @@ body userGroupList userID = do
 	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G" ) then do
 		createNewUser userID [] userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0
 	
+	else if ( head(words(op))=="usermod" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "usermod" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G"v) then do
+		modifyInformation 
+		
 	{- 	Command : # finger <username>
 	Displays information about the specified user 
 	-}
@@ -115,12 +118,7 @@ findSecundaryFor user groups answer n=
 createNewUser <List Of Users> <args> <name>
 	
 -}
-
-{--}
-createNewUser userID userGroupList toCheck args name j = do
---	putStrLn "args::"
---	putStrLn $(show(args))
-	
+createNewUser userID userGroupList toCheck args name j = do	
 	if ( (length(toCheck) == 0)) then do 							--When this is True, means we can created this user
 		if(length(args)==1) then do									--this occurs when there are no secondary groups(-G)
 			addNewUserPrimary userID [] userGroupList 0 (head(args)) [] name
@@ -132,30 +130,8 @@ createNewUser userID userGroupList toCheck args name j = do
 		else do
 			putStrLn "The user exists"
 			body userGroupList userID
-{-			
-		if ( j <= ((length(((toCheck!!0)!!2)))-1) ) then do					--To check if we check all the names in a user group 
-			if ( (((toCheck!!0)!!2)!!j) /= name ) then do						--j+1 iterates over the same user groups to check if exits 
-				createNewUser userID userGroupList toCheck args name (j+1)	
-			else do																--We found a user with the same name
-				putStrLn "The user exists"
-				body userGroupList userID
-		else do																--Start checking another user group
-			createNewUser userID (userGroupList+[head(toCheck)]) (tail(toCheck)) args name 0
--}
 
-addNewUserPrimary userID userGroupList toCheck j primary secondary name = do
-	--map (\x -> if p x then f x else x) xs
-	{-
-	if (j<= (length(userGroupList)-1) ) then do 			--when we still have groups to check
-		if( elem primary ((userGroupList!!j)!!2)) then do		--if this is the primary place to add it
-			addNewUserSecondary (userID++[[name, show((read((last(userID))!!1)::Integer)+1)]]) (map (\x -> if (elem primary ((userGroupList!!j)!!0)) ( [(userGroupList!!j)!!0] ++ [(userGroupList!!j)!!1]++[((userGroupList!!j)!!2)++[name]]++[(userGroupList!!j)!!3] ) then x else x) userGroupList) 0 secondary name 
-		else do													--check the next group to find the primary group
-			addNewUserPrimary userID userGroupList (j+1) primary secondary name		
-	else do													--well... the primary group does not exist
-		putStrLn "The primary group does not exits"
-		body userGroupList userID					
-	-}
-	
+addNewUserPrimary userID userGroupList toCheck j primary secondary name = do	
 	if ((length(toCheck))==0) then do 							--We checked the whole group names but failed
 		putStrLn "userAdd -> The primary group does not exits"
 		body userGroupList userID
@@ -173,10 +149,7 @@ addNewUserPrimary userID userGroupList toCheck j primary secondary name = do
 					addNewUserPrimary userID (userGroupList++[(head(toCheck))]) [] 0 primary secondary name
 				else do 
 					addNewUserPrimary userID (userGroupList++[(head(toCheck))]) (tail(toCheck)) 0 primary secondary name
-			
-			
-
-	  		
+			  		
 addNewUserSecondary userID userGroupList toCheck i k secondary name = do
 	if( null secondary) then do
 		body (userGroupList++toCheck) userID
@@ -216,7 +189,10 @@ concatenate userID userGroupList answer toCheck secondary name =
 		else do
 			concatenate userID userGroupList (answer++[head(toCheck)]) (tail(toCheck)) secondary name	
 			
-			
+{-
+-}
+modifyInformation =
+	putStrLn$ "impriendo"			
 	
 findUser userID userGroupList name j = do
 	if ( j<=(length(userID)-1)) then do 
