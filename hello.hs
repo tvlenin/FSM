@@ -6,7 +6,7 @@ main = do
 --	body [["/"]] [	[["Group1"],["1000"],["root"],["secundario"]]	] 
 --	body [["/"]] [[[""],[""],[""],[""]]]
 	--body [	[ 	["groot"],["1000"],["root","roo2"],[] 	]	]	
-	body [[["groot"],["1000"],["root" ],[] ]] [["root","1000"] ]
+	body [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ]
 	
 {-	 
 	This is the main loop, where the input line is taken, according to the correct command-}		
@@ -16,9 +16,12 @@ body userGroupList userID = do
 	op <- getLine
 
 
+	if  head(words(op)) == "print" then			--The sinstaxis must be correct
+		printuserg userID userGroupList 
+		
 	{-	Command : #groupadd <nombre del grupo> 
 		Here is possible to add a new user group-}	
-	if  head(words(op)) == "groupadd" && length(words(op))==2 then			--The sinstaxis must be correct
+	else if  head(words(op)) == "groupadd" && length(words(op))==2 then			--The sinstaxis must be correct
 		addUserGroup userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]]	--Call the function to add the new group
 	
 	else if (head(words(op)) == "show") && (head(tail(words(op))) == "groups") && length(words(op))==2 then do
@@ -27,39 +30,19 @@ body userGroupList userID = do
 	
 	else if (head(words(op)) == "show") && (head(tail(words(op))) == "users") && length(words(op))==2 then do
 		putStrLn $ "UserName \t\t UID \t\t PrimaryGroup \t\t SecondaryGroups \t\t HomeDirectory"
-		showAllUsers userID [] userGroupList [] 0
+		showAllUsers userID userGroupList userID userGroupList 
 		
 		
 	{- 	Command : # useradd -g primaryGroup [-G secondaryGroup1 secondaryGroup2] userName
 		An user must have an primary group associated, the secondary ones are optional-}
-	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G" ) then
-		createNewUser userID userGroupList userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0
+	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G" ) then do
+		createNewUser userID [] userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0
 	
 	{- 	Command : # finger <username>
 	Displays information about the specified user 
 	-}
-	else if  head(words(op)) == "finger" && length(words(op))==2 then			--The sinstaxis must be correct
+	else if  head(words(op)) == "finger" && length(words(op))==2 then do			--The sinstaxis must be correct
 		findUser userID userGroupList ((words(op))!!1) 0
-
-
-
---	else if head(words(op)) == "pvcreate" then do
---		line <- getLine
---		addFiles xe [line] userGroupList	
-	
---	else if head(words(op)) == "vgcreate" then do
---		line <- getLine
---		findFiles line userGroupList
-	
---	else if op == "ls" then do
---		listFiles 0 xe userGroupList
-		--line <- getLine
-		--findFiles xe line
-	
---	else if op == "find" then do
---		putStrLn "Digite el nombre de la carpeta a buscar"
-		--line <- getLine
-		--findFiles xe line
 		
 	else do
 		putStrLn $ "Unknown command"
@@ -67,6 +50,9 @@ body userGroupList userID = do
 	
 	
 	
+printuserg userID userGroupList = do
+	putStrLn $ (show(userGroupList))
+	body userGroupList userID
 	
 {-
 	To add the user group with all its information-}
@@ -81,8 +67,8 @@ checkAndAdd userID userGroupList i add = do
 		else do
 			checkAndAdd userID userGroupList (i+1) add					--check the name of the next user group			
 	else do											--The user group does not exits
-		putStrLn $ (show userGroupList)
-		putStrLn $ ("agredando!: "++show(add))
+--		putStrLn $ (show userGroupList)
+--		putStrLn $ ("agredando!: "++show(add))
 		body (userGroupList++[add]) userID
 
 
@@ -96,50 +82,91 @@ showAllgroups userID userGroupList i = do
 	else do
 		body userGroupList userID
 
+
+
 {-This prints all the required information about all the users.
 -}
-showAllUsers userID userGroupList toCheck information j = do
-	-- if ( null toCheck ) then do
-	-- 	printInformation userGroupList information 0
-	-- else do
-	-- 	if ( (length((toCheck!!0))) ) then do --Just if the j number is still inside the bounds
-			
-	-- 	else do 
-		putStrLn"imprimiendo"
-
-{-
-createNewUser <List Of Users> <args> <name>-}
-createNewUser userID userGroupList toCheck args name j = do
-	if ( (length(toCheck) == 0)) then do 	
-		if (null args ) then do
-			addNewUserPrimary userID [] userGroupList 0 (head(args)) [] name
-		else do
-			if(length(args)==1) then do
-				addNewUserPrimary userID [] userGroupList 0 (head(args)) [] name
-			else do
-				addNewUserPrimary userID [] userGroupList 0 (head(args)) (tail(tail(args))) name
+showAllUsers userID userGroupList users groups  = do
+	if ( null users ) then do
+		body userGroupList userID
 	else do
-		if ( ((length(((toCheck!!0)!!2)))-1) >= j ) then do					--To check if we check all the names in a user group 
+		putStrLn $ ((users!!0)!!0)++"\t\t\t"++((users!!0)!!1)++"\t\t\t"++show(findPrimaryFor ((users!!0)!!0) groups [] 0)++"\t\t\t"++show(findSecundaryFor ((users!!0)!!0) groups [] 0)++"\t\t\t"++" /home/"++((users!!0)!!0)
+		showAllUsers userID userGroupList (tail(users)) groups 
+		
+findPrimaryFor user groups answer n=
+	if( n <= (length(groups)-1) ) then do
+		if(elem user ((groups!!n)!!2) ) then do
+			findPrimaryFor user groups (answer++[((groups!!n)!!0)!!0]) (n+1)
+		else do
+			findPrimaryFor user groups (answer) (n+1)
+	else 
+		answer
+		
+findSecundaryFor user groups answer n=
+	if ( n <= (length(groups)-1) ) then do
+		if ( elem user ((groups!!n)!!3) ) then do
+			findSecundaryFor user groups (answer++[((groups!!n)!!0)!!0]) (n+1)
+		else do
+			findSecundaryFor user groups (answer) (n+1)
+	else 
+		answer
+		
+{-
+createNewUser <List Of Users> <args> <name>
+	
+-}
+
+{--}
+createNewUser userID userGroupList toCheck args name j = do
+--	putStrLn "args::"
+--	putStrLn $(show(args))
+	
+	if ( (length(toCheck) == 0)) then do 							--When this is True, means we can created this user
+		if(length(args)==1) then do									--this occurs when there are no secondary groups(-G)
+			addNewUserPrimary userID [] userGroupList 0 (head(args)) [] name
+		else do														--if there are secondary groups, I extract the -G term
+			addNewUserPrimary userID [] userGroupList 0 (head(args)) (tail(tail(args))) name
+	else do		
+		if (not (elem name ((toCheck!!0)!!2))) then do
+			createNewUser userID (userGroupList++[head(toCheck)]) (tail(toCheck)) args name j 
+		else do
+			putStrLn "The user exists"
+			body userGroupList userID
+{-			
+		if ( j <= ((length(((toCheck!!0)!!2)))-1) ) then do					--To check if we check all the names in a user group 
 			if ( (((toCheck!!0)!!2)!!j) /= name ) then do						--j+1 iterates over the same user groups to check if exits 
 				createNewUser userID userGroupList toCheck args name (j+1)	
 			else do																--We found a user with the same name
-				putStrLn "userAdd -> Error el usuario existe"
+				putStrLn "The user exists"
 				body userGroupList userID
 		else do																--Start checking another user group
-			createNewUser userID userGroupList (tail(toCheck)) args name 0
+			createNewUser userID (userGroupList+[head(toCheck)]) (tail(toCheck)) args name 0
+-}
 
 addNewUserPrimary userID userGroupList toCheck j primary secondary name = do
+	--map (\x -> if p x then f x else x) xs
+	{-
+	if (j<= (length(userGroupList)-1) ) then do 			--when we still have groups to check
+		if( elem primary ((userGroupList!!j)!!2)) then do		--if this is the primary place to add it
+			addNewUserSecondary (userID++[[name, show((read((last(userID))!!1)::Integer)+1)]]) (map (\x -> if (elem primary ((userGroupList!!j)!!0)) ( [(userGroupList!!j)!!0] ++ [(userGroupList!!j)!!1]++[((userGroupList!!j)!!2)++[name]]++[(userGroupList!!j)!!3] ) then x else x) userGroupList) 0 secondary name 
+		else do													--check the next group to find the primary group
+			addNewUserPrimary userID userGroupList (j+1) primary secondary name		
+	else do													--well... the primary group does not exist
+		putStrLn "The primary group does not exits"
+		body userGroupList userID					
+	-}
+	
 	if ((length(toCheck))==0) then do 							--We checked the whole group names but failed
 		putStrLn "userAdd -> The primary group does not exits"
 		body userGroupList userID
 	else do
 		if ( (((toCheck!!0)!!0)!!0) ==  primary ) then do	--This means we found the correct group to add the user as primary 			
-			addNewUserSecondary (userID++[[name,  show((read((last(userID))!!1)::Integer)+1)  ]]) [] (userGroupList ++ [ [((toCheck!!0)!!0)] ++ [((toCheck!!0)!!1)] ++ [(((toCheck!!0)!!2)++[name])] ++ [((toCheck!!0)!!3)] ] ++ (tail(toCheck)) ) 0 (secondary) name
+			addNewUserSecondary (userID++[[name,  show((read((last(userID))!!1)::Integer)+1)  ]]) [] (userGroupList ++ [ [((toCheck!!0)!!0)] ++ [((toCheck!!0)!!1)] ++ [(((toCheck!!0)!!2)++[name])] ++ [((toCheck!!0)!!3)] ] ++ (tail(toCheck)) ) 0 0 (secondary) name
 		else do
 			--2 casos:
 			--a. j ya se va a salir del grupo, significa que paso de grupo y lo agrego a userGroupList
 			--b. aumentar j para revisar otro usuario dentro del mismo userGroupList
-			if( ( (length (((toCheck!!0)!!2))) -1 ) >= j ) then do
+			if( (j <= (length (((toCheck!!0)!!2))) -1 ) ) then do
 				addNewUserPrimary userID userGroupList toCheck (j+1) primary secondary name -- To compare the next one, inside the same group
 			else do
 				if(length(toCheck)==1) then do
@@ -147,18 +174,49 @@ addNewUserPrimary userID userGroupList toCheck j primary secondary name = do
 				else do 
 					addNewUserPrimary userID (userGroupList++[(head(toCheck))]) (tail(toCheck)) 0 primary secondary name
 			
-addNewUserSecondary userID userGroupList toCheck j secondary name = do
+			
+
+	  		
+addNewUserSecondary userID userGroupList toCheck i k secondary name = do
 	if( null secondary) then do
 		body (userGroupList++toCheck) userID
-	else if ( null toCheck ) then do
-		putStrLn "The secondary User Group does not exits"
+	else if (null toCheck) then do
+		putStrLn $ "A secondary does not exist"++name		
 		body (userGroupList++toCheck) userID
 	else do
-		if ( (((toCheck!!0)!!0)!!0) == (head(secondary)) ) then do --This user will be added as a secondary to this user group
-			addNewUserSecondary userID (userGroupList ++ [ [(toCheck!!0)!!0]++ [(toCheck!!0)!!1] ++ [(toCheck!!0)!!2] ++[ ((toCheck!!0)!!3)++[name] ] ] ++ tail(toCheck)) (tail(toCheck)) 0 (tail(secondary)) name
+		if( i <= ((length(toCheck))-1) ) then do
+			if(k <= (length(secondary))-1) then do
+				if ( elem (secondary!!k) (((toCheck!!i)!!0)) ) then do	--We found the right place to add it as secondary											
+					concatenate userID userGroupList [] toCheck secondary name 	
+				else do
+					addNewUserSecondary userID userGroupList toCheck i (k+1) secondary name
+			else do
+				addNewUserSecondary userID userGroupList toCheck (i+1) (0) secondary name
+		else do																						--The secondary does not exist
+			(addNewUserSecondary userID (userGroupList++toCheck) [] 0 0 secondary name)
+					
+concatenate userID userGroupList answer toCheck secondary name =
+	if (null toCheck && null secondary) then do
+		addNewUserSecondary userID userGroupList (answer) 0 0 [] name
+	else if ( null toCheck) then do													--done checking, go back to add as secondary
+		addNewUserSecondary userID userGroupList (answer++toCheck) 0 0 secondary name	
+	else if(null secondary) then do
+		addNewUserSecondary userID userGroupList (answer++toCheck) 0 0 [] name
+
+	else do																		--there are still elements to concatenate
+		if( (((toCheck!!0)!!0)!!0) == (secondary!!0) ) then do 							--This is the place to add
+			if(length(secondary)<=1 && (length(toCheck))<=1) then do
+				concatenate userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) [] [] name
+			else if (length(secondary)<=1) then do
+				concatenate userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) [] name 
+			else if ((length(toCheck))<=1) then do
+				concatenate userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) [] (tail(secondary)) name
+			else
+				concatenate userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) (tail(secondary)) name 
 		else do
-			addNewUserSecondary userID (userGroupList ++ [head(toCheck)]) (tail(toCheck)) 0 secondary name 
-	
+			concatenate userID userGroupList (answer++[head(toCheck)]) (tail(toCheck)) secondary name	
+			
+			
 	
 findUser userID userGroupList name j = do
 	if ( j<=(length(userID)-1)) then do 
@@ -177,10 +235,10 @@ findUser userID userGroupList name j = do
 printUserInformation userGroupList userID name id toCheck i j asPrimary asSecondary= do
 	if(null toCheck) then do
 		if (null asSecondary)then do
-			putStrLn $ ("Username: "++name++" \n UID:"++id++"\t HomeDirectory:"++"/home/"++name++"\n\n User Primary Group: "++(show(asPrimary)))
+			putStrLn $ ("Username: "++name++" \n UID:"++id++"\t HomeDirectory:"++"/home/"++name++"\n\n User Primary Group: "++(show(findPrimaryFor name userGroupList [] 0)))
 			body userGroupList userID
 		else do
-			putStrLn $ ("Username: "++name++" \n UID:"++id++"\t HomeDirectory:"++"/home/"++name++"\n\n User Primary Group: "++(show(asPrimary))++"\n\n User Secondary Groups:"++(show(asSecondary)))
+			putStrLn $ ("Username: "++name++" \n UID:"++id++"\t HomeDirectory:"++"/home/"++name++"\n\n User Primary Group: "++(show(findPrimaryFor name userGroupList [] 0))++"\n\n User Secondary Groups:"++(show(findSecundaryFor name userGroupList [] 0)))
 			body userGroupList userID			
 	else if ( i <= ( (length((toCheck!!0)!!2)))-1 ) then do		--There are still users as primary in the list of primary, otherwise we move to the users set as secondary
 		if ( (((toCheck!!0)!!2)!!i) == name ) then do 								--The user is as Primary in this User Group
@@ -195,57 +253,4 @@ printUserInformation userGroupList userID name id toCheck i j asPrimary asSecond
 	else do	--This case means we go to the next group
 		printUserInformation (userGroupList++ [head(toCheck)]) userID name id (tail(toCheck)) 0 0 asPrimary asSecondary
 				
-	
-
--- createNewUser2 userGroupList args name = do
--- 	if (length(args))==1 then
--- 		verifyNewUser userGroupList userGroupList (head(args)) [] name
--- 	else do
--- 		verifyNewUser userGroupList userGroupList (head(args)) (tail(args)) name 0 0
-			
--- verifyNewUser userGroupList toCheck primary secondary name x y =do
--- 	if (length(toCheck))==0 then do
--- 		putStrLn "no existe"
--- 	else do
--- 		if ( ((toCheck!!0)!!2)!!0 == name) then do
--- 			putStrLn "The user already exits"
--- 		else do
--- 			verifyNewUser userGroupList (tail(toCheck)) primary secondary name
-					 															
-
------------------------------tory in the actual 
-{-addFiles xe add userGroupList = do
-	putStrLn  "hola"
-	putStrLn "User already exits"
-main userGroupListtmp = xe ++ [add]
-	putStrLn $ show tmp
-	body tmp userGroupList   
--}
-
-----------------------------------------------------------------	  
---called with ls command show all the  directories in the actual
-{-listFiles cont xe userGroupList = do
-	if (cont < length xe) then do
-
-		if (head xe `isInfixOf` (xe !! cont)) && (head xe /= (xe !! cont))  then do
-			putStrLn $ (xe!!cont)
-			let tmp = addOne cont
-			listFiles tmp xe userGroupList	
-		else do 
-			let tmp = addOne cont
-			listFiles tmp xe userGroupList
-	else do
-		body xe userGroupList	-}		
----------------------------------------------------------------
---move to a directory in the actual
-{-moveDirectory dir xe = do
-	if dir `elem` xe then do
-		let tmp = dir : tail xe
-		body tmp
-	else do
-		putStrLn "No existe"
--}	
----------------------------------------------------------------
---addOne x = x + 1	
-	    
 
