@@ -23,10 +23,12 @@ main:: IO()
 main = do 
 	now <- getCurrentTime
 	putStrLn "Inicio del File System"
-	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [()] [] [] [] [] []
+
+	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	putStrLn $ show vglist
+
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
 		printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused
@@ -58,8 +60,15 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if  head(words(op)) == "finger" && length(words(op))==2 then do			--The sinstaxis must be correct
 		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 
-	--else if ( (head(words(op))=="createdev") && ((op!!1)=="-s") && (length(op)==4)) then do
-		--createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4)) then do
+		createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!3) ((words(op))!!2) 0
+
+	else if ( (head(words(op))=="fdisk") && (((words(op))!!1)=="-l") && (length(words(op))==2)) then do
+		--putStrLn$ ""
+		listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 0
+		
+	else if ( (head(words(op))=="rmdev") && (length(words(op))==2)) then do
+		removeStorageDevice xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist
 
 
 	else if op == "cdv" then do
@@ -303,10 +312,46 @@ printUserInformation xe xa userGroupList userID name id toCheck i j asPrimary as
 		
 		
 {------------------------------------------------Functions to storage device--------------------------------------------------------}
-createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
-	putStrLn "D"
+createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize i= do
+	if( i <= ((length(sdlist))-1)) then do
+		if( ((sdlist!!i)!!0) == (newSD) ) then do
+			putStrLn $ "The storage device already exists"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 
+		else do		
+			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize (i+1)
+	else do
+		body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 
-		
+listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
+	if(i <= ((length(sdlist))-1) ) then do 
+		if( ((sdlist!!i)!!2)=="LVM" ) then do
+			putStrLn $ "Disk "++((sdlist!!i)!!0)++": "++((sdlist!!i)!!1)++"MiB Managed by: LVM"
+			listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (i+1)
+		else do
+			putStrLn $ "Disk "++((sdlist!!i)!!0)++": "++((sdlist!!i)!!1)
+			listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (i+1)
+	else do	
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove toCheck= do
+	if(null toCheck) then do
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		if( ((toCheck!!0)!!0) == nameToRemove) then do
+			removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
+		else
+			removeStorageDevice xe xa userGroupList userID (sdlist++[head(toCheck)]) vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
+
+removeSD xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove toCheck= do
+	if(null toCheck) then do
+		True
+	else do
+		if( ((toCheck!!0)!!0) == nameToRemove) then do
+			removeSD xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
+		else
+			removeSD xe xa userGroupList userID (sdlist++[head(toCheck)]) vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
+
+
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
 echoFile xe xa doc dir userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
