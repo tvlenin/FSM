@@ -27,6 +27,7 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	putStrLn $ show vglist
+	putStrLn $ show xe
 
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
@@ -112,7 +113,7 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		name <- getLine
 		list <- getLine
 		if (alreadyVG 0 (splitOn "/ "list) xe) then do
-			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist name (splitOn " " list)) lvlist linklist fslist unused
+			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist name (splitOn " " list) 1000) lvlist linklist fslist unused
 		else do
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	
@@ -128,8 +129,11 @@ alreadyVG cont aList xe = do
 			alreadyVG (cont+1) aList xe
 	else do
 		True
-addVolumeGroups cont volumeList vgName listpv = do
-	(volumeList ++ [(vgName,listpv,0,0,[""],0,0)])
+addVolumeGroups cont volumeList vgName listpv size = do
+	(volumeList ++ [(vgName,listpv,length listpv,0,[""],size,size)])
+	
+addpv volumeList vgName pvPath = do
+	
 
 {-------------------------------User---Groups----------------------------------------}
 printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused= do
@@ -318,8 +322,9 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 
 		else do		
 			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize (i+1)
-	else do
-		body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+	else do  				--call to create the path
+		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+		--body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
 	if(i <= ((length(sdlist))-1) ) then do 
@@ -334,7 +339,8 @@ listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslis
 	
 removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove toCheck= do
 	if(null toCheck) then do
-		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		--body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		rmFiles xe (nameToRemove) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		if( ((toCheck!!0)!!0) == nameToRemove) then do
 			removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
