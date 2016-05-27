@@ -57,6 +57,10 @@ body xe xa userGroupList userID sdlist = do
 	else if  head(words(op)) == "finger" && length(words(op))==2 then do			--The sinstaxis must be correct
 		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist
 
+	else if ( (head(op)=="createdev") && ((op!!1)=="-s") && (length(op)==4)) then do
+		createStorageDevice xe xa userGroupList userID sdlist
+
+
 	else if op == "cdv" then do
 		--putStrLn $ show xa
 		size <- getLine
@@ -278,6 +282,10 @@ printUserInformation xe xa userGroupList userID name id toCheck i j asPrimary as
 		
 		
 		
+{------------------------------------------------Functions to storage device--------------------------------------------------------}
+createStorageDevice xe xa userGroupList userID sdlist = do
+	if()
+
 		
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
 echoFile xe xa doc dir userGroupList userID sdlist= do
