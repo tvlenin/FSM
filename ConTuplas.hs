@@ -22,126 +22,126 @@ main:: IO()
 main = do 
 	now <- getCurrentTime
 	putStrLn "Inicio del File System"
-	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [()] [()]
+	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [()] [()] [] [] [] [] []
 
-body xe xa userGroupList userID sdlist vglist = do 
+body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	putStrLn $ show xe
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
-		printuserg xe xa userID userGroupList sdlist vglist
+		printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused
 	{-	Command : #groupadd <nombre del grupo> 
 		Here is possible to add a new user group-}	
 	else if  head(words(op)) == "groupadd" && length(words(op))==2 then			--The sinstaxis must be correct
-		addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]] sdlist vglist	--Call the function to add the new group
+		addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]] sdlist vglist lvlist linklist fslist unused	--Call the function to add the new group
 
  	else if (head(words(op)) == "show") && (head(tail(words(op))) == "groups") && length(words(op))==2 then do
 		putStrLn $ "GroupName\t\tGID\t\tAssociated Primary Users \t\t AssociatedAsSecondaryUsers"
-		showAllgroups xe xa userID userGroupList 0 sdlist vglist
+		showAllgroups xe xa userID userGroupList 0 sdlist vglist lvlist linklist fslist unused
 
 	else if (head(words(op)) == "show") && (head(tail(words(op))) == "users") && length(words(op))==2 then do
 		putStrLn $ "UserName \t\t UID \t\t PrimaryGroup \t\t SecondaryGroups \t\t HomeDirectory"
-		showAllUsers xe xa userID userGroupList userID userGroupList sdlist vglist
+		showAllUsers xe xa userID userGroupList userID userGroupList sdlist vglist lvlist linklist fslist unused
 
 	{- 	Command : # useradd -g primaryGroup [-G secondaryGroup1 secondaryGroup2] userName
 		An user must have an primary group associated, the secondary ones are optional-}
 	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G" ) then do
-		createNewUser xe xa userID [] userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0 sdlist vglist
+		createNewUser xe xa userID [] userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0 sdlist vglist lvlist linklist fslist unused
 
 	else if ( head(words(op))=="usermod" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "usermod" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G")) then do
 		putStrLn "sobon"
-		modifyInformation xe xa userGroupList userID sdlist vglist
+		modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 	{- 	Command : # finger <username>
 	Displays information about the specified user 
 	-}
 	else if  head(words(op)) == "finger" && length(words(op))==2 then do			--The sinstaxis must be correct
-		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist
+		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 
 	--else if ( (head(words(op))=="createdev") && ((op!!1)=="-s") && (length(op)==4)) then do
-		--createStorageDevice xe xa userGroupList userID sdlist vglist
+		--createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 
 	else if op == "cdv" then do
 		--putStrLn $ show xa
 		size <- getLine
 		dir <- getLine
-		createdDev size dir xe xa userGroupList userID sdlist vglist
+		createdDev size dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if op == "in" then do
 		putStrLn "ingrese el nombre de la carpeta"
 		line <- getLine
-		addFiles "d" xe line xa userGroupList userID sdlist vglist
+		addFiles "d" xe line xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if op == "rm" then do
 		putStrLn "ingrese el nombre de la carpeta"
 		line <- getLine
-		rmFiles xe line xa 	userGroupList userID sdlist vglist
+		rmFiles xe line xa 	userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
 		
 	else if op == "touch" then do
 		putStrLn "ingrese el nombre del archivo"
 		line <- getLine
-		addFiles "-" xe line xa userGroupList userID sdlist vglist
+		addFiles "-" xe line xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if op == "echo" then do
 		putStrLn "ingrese el archivo a modificar"
 		dir <- getLine
 		putStrLn "ingrese el contenido del archivo"
 		line <- getLine
-		echoFile xe xa line dir userGroupList userID sdlist vglist
+		echoFile xe xa line dir userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if op == "cat" then do
 		putStrLn "ingrese el archivo a ver"
 		dir <- getLine
-		catFile xe xa dir sdlist vglist
+		catFile xe xa dir sdlist vglist lvlist linklist fslist unused
 		
 	else if op == "ls" then do
 		putStrLn "buscando"
-		listFiles 0 xe xa userGroupList userID sdlist vglist
+		listFiles 0 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if op == "mv" then do
 		putStrLn "Digite la carpte"
 		line <- getLine
-		moveDirectory line xe xa userGroupList userID sdlist vglist
+		moveDirectory line xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn "Fin"
 	
 {--------------------------------------------------------------------------------------------------------------------------}
 
 {-------------------------------User---Groups----------------------------------------}
-printuserg xe xa userID userGroupList sdlist vglist= do
+printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused= do
 	putStrLn $ (show(userGroupList))
-	body xe xa userGroupList userID sdlist vglist
+	body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 {-
 	To add the user group with all its information-}
-addUserGroup xe xa  userID userGroupList add sdlist vglist= do
-	checkAndAdd xe xa userID userGroupList 0 add sdlist vglist
+addUserGroup xe xa  userID userGroupList add sdlist vglist lvlist linklist fslist unused= do
+	checkAndAdd xe xa userID userGroupList 0 add sdlist vglist lvlist linklist fslist unused
 	
-checkAndAdd xe xa userID userGroupList i add sdlist vglist= do
+checkAndAdd xe xa userID userGroupList i add sdlist vglist lvlist linklist fslist unused= do
 	if( i<= (length(userGroupList)-1)) then do
 		if ( (((userGroupList!!i)!!0)!!0) == ((add!!0)!!0)) then do		--this means the user group already exits
 			putStrLn $ "The user group already exits"
-			body xe xa userGroupList userID sdlist vglist
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		else do
-			checkAndAdd xe xa userID userGroupList (i+1) add sdlist vglist					--check the name of the next user group			
+			checkAndAdd xe xa userID userGroupList (i+1) add sdlist vglist lvlist linklist fslist unused					--check the name of the next user group			
 	else do											--The user group does not exits
 --		putStrLn $ (show userGroupList)
 --		putStrLn $ ("agredando!: "++show(add))
-		body xe xa (userGroupList++[add]) userID sdlist vglist
+		body xe xa (userGroupList++[add]) userID sdlist vglist lvlist linklist fslist unused
 		
 {-Here is the display of GroupName -> GroupId -> AssociatedUsers -> AssociatedSecondaryUsers
 -}
-showAllgroups xe xa userID userGroupList i sdlist vglist= do
+showAllgroups xe xa userID userGroupList i sdlist vglist lvlist linklist fslist unused= do
 	if( i<= (length(userGroupList)-1) ) then do				--there are still groups to print			
 		--putStrLn $ (show ( (((userGroupList!!i)!!0)!!0) ++ "\t" ++ (((userGroupList!!i)!!1)!!0) ++"\t" ++((userGroupList!!i)!!2) ++ "\t"++ ((userGroupList!!i)!!3) ) )
 		putStrLn $ (( ((((userGroupList!!i)!!0)!!0)) ++ "\t\t\t" ++ (((userGroupList!!i)!!1)!!0) ++"\t\t\t" ++(show((userGroupList!!i)!!2)) ++ "\t\t\t" ++ (show((userGroupList!!i)!!3)) ) )		
-		showAllgroups xe xa userID userGroupList (i+1) sdlist vglist
+		showAllgroups xe xa userID userGroupList (i+1) sdlist vglist lvlist linklist fslist unused
 	else do
-		body xe xa userGroupList userID	sdlist vglist
+		body xe xa userGroupList userID	sdlist vglist lvlist linklist fslist unused
 		
 {-This prints all the required information about all the users.
 -}
-showAllUsers xe xa userID userGroupList users groups sdlist vglist = do
+showAllUsers xe xa userID userGroupList users groups sdlist vglist lvlist linklist fslist unused = do
 	if ( null users ) then do
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn $ ((users!!0)!!0)++"\t\t\t"++((users!!0)!!1)++"\t\t\t"++show(findPrimaryFor ((users!!0)!!0) groups [] 0)++"\t\t\t"++show(findSecundaryFor ((users!!0)!!0) groups [] 0)++"\t\t\t"++" /home/"++((users!!0)!!0)
-		showAllUsers xe xa userID userGroupList (tail(users)) groups sdlist vglist 
+		showAllUsers xe xa userID userGroupList (tail(users)) groups sdlist vglist lvlist linklist fslist unused 
 		
 findPrimaryFor user groups answer n=
 	if( n <= (length(groups)-1) ) then do
@@ -165,134 +165,134 @@ findSecundaryFor user groups answer n=
 createNewUser <List Of Users> <args> <name>
 	
 -}
-createNewUser xe xa userID userGroupList toCheck args name j sdlist vglist= do	
+createNewUser xe xa userID userGroupList toCheck args name j sdlist vglist lvlist linklist fslist unused= do	
 	if ( (length(toCheck) == 0)) then do 							--When this is True, means we can created this user
 		if(length(args)==1) then do									--this occurs when there are no secondary groups(-G)
-			addNewUserPrimary xe xa userID [] userGroupList 0 (head(args)) [] name sdlist vglist
+			addNewUserPrimary xe xa userID [] userGroupList 0 (head(args)) [] name sdlist vglist lvlist linklist fslist unused
 		else do														--if there are secondary groups, I extract the -G term
-			addNewUserPrimary xe xa userID [] userGroupList 0 (head(args)) (tail(tail(args))) name sdlist vglist
+			addNewUserPrimary xe xa userID [] userGroupList 0 (head(args)) (tail(tail(args))) name sdlist vglist lvlist linklist fslist unused
 	else do		
 		if (not (elem name ((toCheck!!0)!!2))) then do
-			createNewUser xe xa userID (userGroupList++[head(toCheck)]) (tail(toCheck)) args name j sdlist vglist
+			createNewUser xe xa userID (userGroupList++[head(toCheck)]) (tail(toCheck)) args name j sdlist vglist lvlist linklist fslist unused
 		else do
 			putStrLn "The user exists"
-			body xe xa userGroupList userID sdlist vglist
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
-addNewUserPrimary xe xa userID userGroupList toCheck j primary secondary name sdlist vglist = do	
+addNewUserPrimary xe xa userID userGroupList toCheck j primary secondary name sdlist vglist lvlist linklist fslist unused = do	
 	if ((length(toCheck))==0) then do 							--We checked the whole group names but failed
 		putStrLn "userAdd -> The primary group does not exits"
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		if ( (((toCheck!!0)!!0)!!0) ==  primary ) then do	--This means we found the correct group to add the user as primary 			
-			addNewUserSecondary xe xa (userID++[[name,  show((read((last(userID))!!1)::Integer)+1)  ]]) [] (userGroupList ++ [ [((toCheck!!0)!!0)] ++ [((toCheck!!0)!!1)] ++ [(((toCheck!!0)!!2)++[name])] ++ [((toCheck!!0)!!3)] ] ++ (tail(toCheck)) ) 0 0 (secondary) name sdlist vglist
+			addNewUserSecondary xe xa (userID++[[name,  show((read((last(userID))!!1)::Integer)+1)  ]]) [] (userGroupList ++ [ [((toCheck!!0)!!0)] ++ [((toCheck!!0)!!1)] ++ [(((toCheck!!0)!!2)++[name])] ++ [((toCheck!!0)!!3)] ] ++ (tail(toCheck)) ) 0 0 (secondary) name sdlist vglist lvlist linklist fslist unused
 		else do
 			--2 casos:
 			--a. j ya se va a salir del grupo, significa que paso de grupo y lo agrego a userGroupList
 			--b. aumentar j para revisar otro usuario dentro del mismo userGroupList
 			if( (j <= (length (((toCheck!!0)!!2))) -1 ) ) then do
-				addNewUserPrimary xe xa userID userGroupList toCheck (j+1) primary secondary name sdlist vglist-- To compare the next one, inside the same group
+				addNewUserPrimary xe xa userID userGroupList toCheck (j+1) primary secondary name sdlist vglist lvlist linklist fslist unused-- To compare the next one, inside the same group
 			else do
 				if(length(toCheck)==1) then do
-					addNewUserPrimary xe xa userID (userGroupList++[(head(toCheck))]) [] 0 primary secondary name sdlist vglist
+					addNewUserPrimary xe xa userID (userGroupList++[(head(toCheck))]) [] 0 primary secondary name sdlist vglist lvlist linklist fslist unused
 				else do 
-					addNewUserPrimary xe xa userID (userGroupList++[(head(toCheck))]) (tail(toCheck)) 0 primary secondary name sdlist vglist
+					addNewUserPrimary xe xa userID (userGroupList++[(head(toCheck))]) (tail(toCheck)) 0 primary secondary name sdlist vglist lvlist linklist fslist unused
 			  		
-addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist vglist= do
+addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist vglist lvlist linklist fslist unused= do
 	if( null secondary) then do
 		--body xe xa (userGroupList++toCheck) userID
-		addFiles "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist 	
+		addFiles "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused 	
 	else if (null toCheck) then do
 		putStrLn $ "A secondary does not exist"++name		
-		body xe xa (userGroupList++toCheck) userID sdlist vglist
+		body xe xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused
 	else do
 		if( i <= ((length(toCheck))-1) ) then do
 			if(k <= (length(secondary))-1) then do
 				if ( elem (secondary!!k) (((toCheck!!i)!!0)) ) then do	--We found the right place to add it as secondary											
-					concatenate xe xa userID userGroupList [] toCheck secondary name sdlist	 vglist
+					concatenate xe xa userID userGroupList [] toCheck secondary name sdlist	 vglist lvlist linklist fslist unused
 				else do
-					addNewUserSecondary xe xa userID userGroupList toCheck i (k+1) secondary name sdlist vglist
+					addNewUserSecondary xe xa userID userGroupList toCheck i (k+1) secondary name sdlist vglist lvlist linklist fslist unused
 			else do
-				addNewUserSecondary xe xa userID userGroupList toCheck (i+1) (0) secondary name sdlist vglist
+				addNewUserSecondary xe xa userID userGroupList toCheck (i+1) (0) secondary name sdlist vglist lvlist linklist fslist unused
 		else do																						--The secondary does not exist
-			(addNewUserSecondary xe xa userID (userGroupList++toCheck) [] 0 0 secondary name) sdlist vglist
+			(addNewUserSecondary xe xa userID (userGroupList++toCheck) [] 0 0 secondary name) sdlist vglist lvlist linklist fslist unused
 					
-concatenate xe xa userID userGroupList answer toCheck secondary name sdlist vglist=
+concatenate xe xa userID userGroupList answer toCheck secondary name sdlist vglist lvlist linklist fslist unused=
 	if (null toCheck && null secondary) then do
-		addNewUserSecondary xe xa userID userGroupList (answer) 0 0 [] name sdlist vglist
+		addNewUserSecondary xe xa userID userGroupList (answer) 0 0 [] name sdlist vglist lvlist linklist fslist unused
 	else if ( null toCheck) then do													--done checking, go back to add as secondary
-		addNewUserSecondary xe xa userID userGroupList (answer++toCheck) 0 0 secondary name	sdlist vglist
+		addNewUserSecondary xe xa userID userGroupList (answer++toCheck) 0 0 secondary name	sdlist vglist lvlist linklist fslist unused
 	else if(null secondary) then do
-		addNewUserSecondary xe xa userID userGroupList (answer++toCheck) 0 0 [] name sdlist vglist
+		addNewUserSecondary xe xa userID userGroupList (answer++toCheck) 0 0 [] name sdlist vglist lvlist linklist fslist unused
 
 	else do																		--there are still elements to concatenate
 		if( (((toCheck!!0)!!0)!!0) == (secondary!!0) ) then do 							--This is the place to add
 			if(length(secondary)<=1 && (length(toCheck))<=1) then do
-				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) [] [] name sdlist vglist
+				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) [] [] name sdlist vglist lvlist linklist fslist unused
 			else if (length(secondary)<=1) then do
-				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) [] name sdlist vglist
+				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) [] name sdlist vglist lvlist linklist fslist unused
 			else if ((length(toCheck))<=1) then do
-				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) [] (tail(secondary)) name sdlist vglist
+				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) [] (tail(secondary)) name sdlist vglist lvlist linklist fslist unused
 			else
-				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) (tail(secondary)) name sdlist vglist
+				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) (tail(secondary)) name sdlist vglist lvlist linklist fslist unused
 		else do
-			concatenate xe xa userID userGroupList (answer++[head(toCheck)]) (tail(toCheck)) secondary name	sdlist vglist
+			concatenate xe xa userID userGroupList (answer++[head(toCheck)]) (tail(toCheck)) secondary name	sdlist vglist lvlist linklist fslist unused
 		
 {-
 -}
-modifyInformation xe xa userGroupList userID sdlist vglist= do
+modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	putStrLn$ "impriendo"
-	body xe xa userGroupList userID sdlist vglist
+	body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 
-findUser xe xa userID userGroupList name j sdlist vglist= do
+findUser xe xa userID userGroupList name j sdlist vglist lvlist linklist fslist unused= do
 	if ( j<=(length(userID)-1)) then do 
 		if(((userID!!j)!!0)==name) then do
-			printUserInformation xe xa [] userID name ((userID!!j)!!0) userGroupList 0 0 [] [] sdlist vglist
+			printUserInformation xe xa [] userID name ((userID!!j)!!0) userGroupList 0 0 [] [] sdlist vglist lvlist linklist fslist unused
 		else do
-			findUser xe xa userID userGroupList name (j+1) sdlist vglist
+			findUser xe xa userID userGroupList name (j+1) sdlist vglist lvlist linklist fslist unused
 			
 	else do
 		putStrLn $ "User not found"
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
 --Username
 --UID		path
 --Associated primary group:
 --Associated secondary groups:
-printUserInformation xe xa userGroupList userID name id toCheck i j asPrimary asSecondary sdlist vglist= do
+printUserInformation xe xa userGroupList userID name id toCheck i j asPrimary asSecondary sdlist vglist lvlist linklist fslist unused= do
 	if(null toCheck) then do
 		if (null asSecondary)then do
 			putStrLn $ ("Username: "++name++" \n UID:"++id++"\t HomeDirectory:"++"/home/"++name++"\n\n User Primary Group: "++(show(findPrimaryFor name userGroupList [] 0)))
-			body xe xa userGroupList userID sdlist vglist
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		else do
 			putStrLn $ ("Username: "++name++" \n UID:"++id++"\t HomeDirectory:"++"/home/"++name++"\n\n User Primary Group: "++(show(findPrimaryFor name userGroupList [] 0))++"\n\n User Secondary Groups:"++(show(findSecundaryFor name userGroupList [] 0)))
-			body xe xa userGroupList userID sdlist vglist			
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused			
 	else if ( i <= ( (length((toCheck!!0)!!2)))-1 ) then do		--There are still users as primary in the list of primary, otherwise we move to the users set as secondary
 		if ( (((toCheck!!0)!!2)!!i) == name ) then do 								--The user is as Primary in this User Group
-			printUserInformation xe xa userGroupList userID name id toCheck (i+1) j (((toCheck!!0)!!2)!!i) asSecondary sdlist vglist
+			printUserInformation xe xa userGroupList userID name id toCheck (i+1) j (((toCheck!!0)!!2)!!i) asSecondary sdlist vglist lvlist linklist fslist unused
 		else do																		--Let's check the next user set as primary
-			printUserInformation xe xa userGroupList userID name id toCheck (i+1) j asPrimary asSecondary sdlist vglist
+			printUserInformation xe xa userGroupList userID name id toCheck (i+1) j asPrimary asSecondary sdlist vglist lvlist linklist fslist unused
 	else if ( j <= (length((toCheck!!0)!!3))-1 ) then do
 		if ( (((toCheck!!0)!!3)!!j)==name ) then do 								--The user is as secundary in this User Group
-			printUserInformation xe xa userGroupList userID name id toCheck i (j+1) asPrimary (asSecondary++[(((toCheck!!0)!!3)!!j)]) sdlist vglist
+			printUserInformation xe xa userGroupList userID name id toCheck i (j+1) asPrimary (asSecondary++[(((toCheck!!0)!!3)!!j)]) sdlist vglist lvlist linklist fslist unused
 		else do																		--Let's check the next user set as secundary
-			printUserInformation xe xa userGroupList userID name id toCheck i (j+1) asPrimary asSecondary sdlist vglist
+			printUserInformation xe xa userGroupList userID name id toCheck i (j+1) asPrimary asSecondary sdlist vglist lvlist linklist fslist unused
 	else do	--This case means we go to the next group
-		printUserInformation xe xa (userGroupList++ [head(toCheck)]) userID name id (tail(toCheck)) 0 0 asPrimary asSecondary sdlist vglist
+		printUserInformation xe xa (userGroupList++ [head(toCheck)]) userID name id (tail(toCheck)) 0 0 asPrimary asSecondary sdlist vglist lvlist linklist fslist unused
 		
 		
 		
 {------------------------------------------------Functions to storage device--------------------------------------------------------}
-createStorageDevice xe xa userGroupList userID sdlist vglist = do
+createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	putStrLn "D"
 
 		
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
-echoFile xe xa doc dir userGroupList userID sdlist vglist= do
+echoFile xe xa doc dir userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
 		--putStrLn $ show((getElem 0 dir xe))
 		let tuple = (f(xe !! (getElem 0 dir xe)),s(xe !! (getElem 0 dir xe)),t(xe !! (getElem 0 dir xe)),fo(xe !! (getElem 0 dir xe)),fi(xe !! (getElem 0 dir xe)),doc,l(xe !! (getElem 0 dir xe)))
-		body ((fhalf 0 xe (getElem 0 dir xe) []) ++ [tuple] ++(shalf ((getElem 0 dir xe)+1) xe (getElem 0 dir xe) []))  xa userGroupList userID sdlist vglist
+		body ((fhalf 0 xe (getElem 0 dir xe) []) ++ [tuple] ++(shalf ((getElem 0 dir xe)+1) xe (getElem 0 dir xe) []))  xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn "Fallo"
 fhalf cont xe ind final= do
@@ -305,7 +305,7 @@ shalf cont xe ind final= do
 		fhalf (cont+1) xe ind (final ++ [xe!!cont])
 	else do
 		final
-catFile xe xa dir sdlist vglist=do
+catFile xe xa dir sdlist vglist lvlist linklist fslist unused=do
 	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
 		putStrLn $ show (si(xe !! (getElem 0 dir xe) ))
 	else
@@ -313,7 +313,7 @@ catFile xe xa dir sdlist vglist=do
 	
 {------------------------------------------------Functions to manage the Path-----------------------------------------------------}
 
-rmFiles xe dir xa userGroupList userID sdlist vglist= do
+rmFiles xe dir xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	putStrLn $ show (isNow 0 dir xe)
 	putStrLn $ show (isEmpty xe 0 dir)
 	if (isNow 0 dir xe) == False then do
@@ -322,7 +322,7 @@ rmFiles xe dir xa userGroupList userID sdlist vglist= do
 		putStrLn "La carpeta no esta vacia"
 		
 	else if (isNow 0 dir xe) && isEmpty xe 0 dir then do
-		body ((take ((getElem 0 dir xe)) xe )++(drop ((getElem 0 dir xe)+1) xe )) xa userGroupList userID sdlist vglist
+		body ((take ((getElem 0 dir xe)) xe )++(drop ((getElem 0 dir xe)+1) xe )) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn "No Se"
 
@@ -340,66 +340,66 @@ isEmpty xe cont dir  = do
 	
 
 
-addFiles mode xe add xa userGroupList userID sdlist vglist = do
+addFiles mode xe add xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	now <- getCurrentTime
 	time <- getCurrentTimeZone
 	if isNow 0 add xe then do
 		putStrLn "Already exists"
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if ("/" `isInfixOf` add )then do
-		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist
+		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (f (head xe )) == "/" then do
-		body (xe ++ [(add ,f(head xe) ++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist
+		body (xe ++ [(add ,f(head xe) ++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do 
-		body (xe ++ [(add, s(head xe)++"/" ++ add,getDate now,"Hora","root","",mode)]) xa userGroupList userID sdlist vglist
+		body (xe ++ [(add, s(head xe)++"/" ++ add,getDate now,"Hora","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
-addFiles2 mode modeT cont dir xe add xa userGroupList userID sdlist vglist= do
+addFiles2 mode modeT cont dir xe add xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	now <- getCurrentTime
 	if (f (head xe )) == "/" then do
 		--putStrLn "d"
-		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,f(head xe) ++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist
+		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,f(head xe) ++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
-		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,f(head xe) ++"/"++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist
+		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,f(head xe) ++"/"++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
-splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist= do
+splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if (cont == 0) then do
 		putStrLn "s"
-		addFiles2 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist
+		addFiles2 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (cont == (length dir)-1) && modeT == "-" then do
 		putStrLn "Entra"
-		addFiles2 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist
+		addFiles2 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (cont < length dir) && (cont /= 0) then do
 		putStrLn "5"
-		addFiles2 "d" modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist	
+		addFiles2 "d" modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused	
 	else
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 
-listFiles cont  xe xa userGroupList userID sdlist vglist= do
+listFiles cont  xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	
 	if (cont < length xe) then do
 		if (f(head xe ) `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont)))  then do
 			putStrLn $ f(xe !! cont)
-			listFiles (cont + 1) xe xa userGroupList userID sdlist vglist
+			listFiles (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		else do
-			listFiles (cont + 1 ) xe xa userGroupList userID sdlist vglist
+			listFiles (cont + 1 ) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do 
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
-moveDirectory dir xe xa userGroupList userID sdlist vglist= do
+moveDirectory dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if dir == ".." then do
 		putStrLn "retroceder"
 	else if dir == "/" then do
-		body ((xe!!1):tail xe) xa userGroupList userID sdlist vglist	
+		body ((xe!!1):tail xe) xa userGroupList userID sdlist vglist lvlist linklist fslist unused	
 	else if (s(head xe) == "/") && (isNow 0 dir xe) && (l(xe !! (getElem 0 dir xe)) == "d") then do
-		body ((xe !! getElem 0 dir xe):tail xe) xa userGroupList userID sdlist vglist
+		body ((xe !! getElem 0 dir xe):tail xe) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if  (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "d") then do
-		body ((xe !! ((getElem 0 dir xe))):tail xe) xa userGroupList userID sdlist vglist
+		body ((xe !! ((getElem 0 dir xe))):tail xe) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if  (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
 		putStrLn "Archivo"
 	else do 
 		putStrLn "No existe"
-		body xe xa userGroupList userID sdlist  vglist
+		body xe xa userGroupList userID sdlist  vglist lvlist linklist fslist unused
 
 	
 getElem cont dir xe = do
@@ -436,13 +436,13 @@ getTime now time = do
 
 {----------------------------------------------------------End Path----------------------------------------------------------------}
 --Begin Device Storage
-createdDev size dir xe xa userGroupList userID sdlist vglist= do 
+createdDev size dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do 
 	if (isNow2 0 dir xe) then do
 		putStrLn "SIPP" 
-		body xe ((dir,size,dir):xa) userGroupList userID sdlist vglist
+		body xe ((dir,size,dir):xa) userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn "El directorio no existe"
-		body xe xa userGroupList userID sdlist vglist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
 
 
