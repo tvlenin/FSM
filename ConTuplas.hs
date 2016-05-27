@@ -25,7 +25,7 @@ main = do
 	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
-	--putStrLn $ show xe
+	putStrLn $ show xe
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
 		printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused
@@ -297,8 +297,9 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 
 		else do		
 			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize (i+1)
-	else do
-		body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+	else do  				--call to create the path
+		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+		--body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
 	if(i <= ((length(sdlist))-1) ) then do 
@@ -313,7 +314,8 @@ listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslis
 	
 removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove toCheck= do
 	if(null toCheck) then do
-		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		--body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		rmFiles xe (nameToRemove) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		if( ((toCheck!!0)!!0) == nameToRemove) then do
 			removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
