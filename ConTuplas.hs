@@ -15,6 +15,7 @@ import Data.List
 import Data.List.Split
 import Data.Char
 import Data.Time
+import Data.Either
 main:: IO()
 
 -- [(path, size, True),(path, size, True)]
@@ -22,10 +23,10 @@ main:: IO()
 main = do 
 	now <- getCurrentTime
 	putStrLn "Inicio del File System"
-	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [()] [()] [] [] [] [] []
+	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [()] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
-	putStrLn $ show xe
+	putStrLn $ show vglist
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
 		printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused
@@ -98,10 +99,29 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		putStrLn "Digite la carpte"
 		line <- getLine
 		moveDirectory line xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	else if op == "vgcreate" then do
+		name <- getLine
+		list <- getLine
+		if (alreadyVG 0 (splitOn "/ "list) xe) then do
+			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist name (splitOn " " list)) lvlist linklist fslist unused
+		else do
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
 	else do
 		putStrLn "Fin"
 	
-{--------------------------------------------------------------------------------------------------------------------------}
+{----------------------------------------------------------------Volume Groups----------------------------------------------------------}
+alreadyVG cont aList xe = do
+	if (cont < length aList) then do
+		if (isNow 0 (aList !! cont) xe) == False then do
+			False
+		else do
+			alreadyVG (cont+1) aList xe
+	else do
+		True
+addVolumeGroups cont volumeList vgName listpv = do
+	(volumeList ++ [(vgName,listpv,0,0,[""],0,0)])
 
 {-------------------------------User---Groups----------------------------------------}
 printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused= do
