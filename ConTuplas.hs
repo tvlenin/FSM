@@ -23,7 +23,6 @@ main:: IO()
 main = do 
 	now <- getCurrentTime
 	putStrLn "Inicio del File System"
-
 	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
@@ -351,6 +350,17 @@ removeSD xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 
 		else
 			removeSD xe xa userGroupList userID (sdlist++[head(toCheck)]) vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
 
+isManagedByLVM sdlist sdname = do
+	if(null sdlist) then do
+		False		
+	else do 
+		if( ((sdlist!!0)!!0) == sdname) then do
+			if( ((sdlist!!0)!!2) == "LVM" ) then do
+				True
+			else do 
+				False
+		else do
+			isManagedByLVM (tail(sdlist)) sdname
 
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
 echoFile xe xa doc dir userGroupList userID sdlist vglist lvlist linklist fslist unused= do
