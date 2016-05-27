@@ -25,7 +25,7 @@ main = do
 	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
-	putStrLn $ show xe
+	--putStrLn $ show xe
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
 		printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused
@@ -57,9 +57,13 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if  head(words(op)) == "finger" && length(words(op))==2 then do			--The sinstaxis must be correct
 		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 
-	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4)) then do
+	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (numberCheck ((words(op))!!2))) then do
 		createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!3) ((words(op))!!2) 0
 
+	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (not(numberCheck ((words(op))!!2)))) then do
+		putStrLn$"Size must no contain letters"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		
 	else if ( (head(words(op))=="fdisk") && (((words(op))!!1)=="-l") && (length(words(op))==2)) then do
 		--putStrLn$ ""
 		listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 0
@@ -67,7 +71,9 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if ( (head(words(op))=="rmdev") && (length(words(op))==2)) then do
 		removeStorageDevice xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist
 
-
+	else if ( (head(words(op))=="pvcreate") && (length(words(op))==2) ) then do
+		addLVMtodevice  xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist False
+		
 	else if op == "cdv" then do
 		--putStrLn $ show xa
 		size <- getLine
@@ -106,7 +112,9 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		line <- getLine
 		moveDirectory line xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
-		putStrLn "Fin"
+		putStrLn $ ("error")
+
+		  
 	
 {--------------------------------------------------------------------------------------------------------------------------}
 
@@ -322,6 +330,19 @@ removeStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 		else
 			removeStorageDevice xe xa userGroupList userID (sdlist++[head(toCheck)]) vglist lvlist linklist fslist unused nameToRemove (tail(toCheck))
 
+addLVMtodevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name toCheck flag= do
+	if (null toCheck) then do
+		if(flag==True) then do
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused		
+		else do
+			putStrLn "Not such storage device"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		if( ((toCheck!!0)!!0) == name) then do
+			addLVMtodevice xe xa userGroupList (userID) (sdlist++[[ ((toCheck!!0)!!0), ((toCheck!!0)!!1), "LVM" ]]) vglist lvlist linklist fslist unused name (tail(toCheck)) True
+		else do
+			addLVMtodevice xe xa userGroupList (userID) (sdlist++[head(toCheck)]) vglist lvlist linklist fslist unused name (tail(toCheck)) flag
+
 removeSD xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused nameToRemove toCheck= do
 	if(null toCheck) then do
 		True
@@ -343,6 +364,16 @@ isManagedByLVM sdlist sdname = do
 		else do
 			isManagedByLVM (tail(sdlist)) sdname
 
+getSize sdlist name = do
+	if(null sdlist) then do
+		0
+	else
+		if ( ((sdlist!!0)!!0) == name ) then do
+			((sdlist!!0)!!1)
+		else do
+			getSize (tail(sdlist)) name
+
+			
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
 echoFile xe xa doc dir userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
@@ -532,3 +563,16 @@ l (_, _, _, _, _, _, a) = a
 fd (a, _, _) = a
 sd (_, a, _) = a
 td (_, _, a) = a
+
+
+numberCheck txt = do
+	if(null txt) then
+		True
+	else if( (txt!!0)=='0' || (txt!!0)=='1' || (txt!!0)=='2' || (txt!!0)=='3' || (txt!!0)=='4' || (txt!!0)=='5' || (txt!!0)=='6' || (txt!!0)=='7' || (txt!!0)=='8' || (txt!!0)=='9') then do
+  		if(length(txt)==1) then
+   			numberCheck []
+  		else 
+   			numberCheck (tail(txt))
+ 	else 
+  		False
+  
