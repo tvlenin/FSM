@@ -47,10 +47,18 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "useradd" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G" ) then do
 		createNewUser xe xa userID [] userGroupList (init(tail(tail(words(op))))) (last(tail(tail(words(op)))))	0 sdlist vglist lvlist linklist fslist unused
 
-	else if ( head(words(op))=="usermod" && (words(op)!!1) =="-g" && length(words(op))==4 || ( head(words(op)) == "usermod" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G")) then do
-		putStrLn "sobon"
-		modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-
+	else if ( head(words(op))=="usermod" && (words(op)!!1) =="-g" && length(words(op))==4) then do 
+		modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (last(words(op))) (words(op)!!2) []
+		
+	else if( head(words(op)) == "usermod" && (words(op)!!1) =="-G" && length(words(op))>=4 ) then do 
+		modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (last(words(op))) "none" (tail(tail((init(words(op))))))
+		
+	else if( head(words(op)) == "usermod" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G"  ) then do
+		modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (last(words(op))) ((words(op))!!2) (tail(tail(tail(tail(init(words(op)))))))
+		
+--	else if ( head(words(op)) == "usermod" && (words(op)!!1) =="-g" && length(words(op))>=6 && (words(op)!!3)=="-G")) then do
+--		modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (tail(words(op))) ()  
+																								-- ^ name 
 	{- 	Command : # finger <username>
 	Displays information about the specified user 
 	-}
@@ -61,7 +69,9 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!1) 0
 		--findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 		
-		
+	else if  head(words(op)) == "groupdel" && length(words(op))==2 then do			--The sinstaxis must be correct
+		deleteGroup xe xa [] userID sdlist vglist lvlist linklist fslist unused ((words(op))!!1) userGroupList
+				
 	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (numberCheck ((words(op))!!2))) then do
 		createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!3) ((words(op))!!2) 0
 
@@ -223,7 +233,6 @@ addNewUserPrimary xe xa userID userGroupList toCheck j primary secondary name sd
 addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist vglist lvlist linklist fslist unused= do
 	if( null secondary) then do
 		--body xe xa (userGroupList++toCheck) userID
-
 		addFiles "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused 	
 	else if (null toCheck) then do
 		putStrLn $ "A secondary does not exist"++name		
@@ -259,12 +268,68 @@ concatenate xe xa userID userGroupList answer toCheck secondary name sdlist vgli
 				concatenate xe xa userID userGroupList (((answer++[[[(((toCheck!!0)!!0)!!0)],[(((toCheck!!0)!!1)!!0)],(((toCheck!!0)!!2)),(((toCheck!!0)!!3)++[name])]]))) (tail(toCheck)) (tail(secondary)) name sdlist vglist lvlist linklist fslist unused
 		else do
 			concatenate xe xa userID userGroupList (answer++[head(toCheck)]) (tail(toCheck)) secondary name	sdlist vglist lvlist linklist fslist unused
+	
+	
+	
+	
 		
 {-
 -}
-modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
-	putStrLn$ "impriendo"
-	body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+modifyInformation xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name argsPrimary argsSecundary = do
+	dellUserModify xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name 0 argsPrimary argsSecundary
+
+dellUserModify xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name i argsPrimary argsSecundary= do
+	if (i > ((length(userID)-1))) then do
+		putStrLn$"The user does not exist"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do 
+		if( name == ((userID!!i)!!0)) then do -- the user exist
+			deletePath2 xe ("home/"++((userID!!i)!!0)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused name argsPrimary argsSecundary
+			--dellUserModify2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID argsPrimary argsSecundary
+		else do
+			dellUserModify xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name (i+1) argsPrimary argsSecundary
+			
+dellUserModify2 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name toCheck argsPrimary argsSecundary = do
+	if(null toCheck) then do
+		deleteUserFromGroup2 xe xa [] (userID) sdlist vglist lvlist linklist fslist unused userGroupList name argsPrimary argsSecundary-- Erase from the user groups
+	else do
+		if (name == ((toCheck!!0)!!0) ) then do	
+			if( (length(toCheck)) == 1) then do
+				dellUserModify2 xe xa userGroupList (userID) sdlist vglist lvlist linklist fslist unused name [] argsPrimary argsSecundary
+			else 
+				dellUserModify2 xe xa userGroupList (userID) sdlist vglist lvlist linklist fslist unused name (tail(toCheck)) argsPrimary argsSecundary 	
+		else 
+			if((length(toCheck))==1) then do
+				dellUserModify2 xe xa userGroupList (userID++[head(toCheck)]) sdlist vglist lvlist linklist fslist unused name [] argsPrimary argsSecundary
+			else do
+				dellUserModify2 xe xa userGroupList (userID++[head(toCheck)]) sdlist vglist lvlist linklist fslist unused name (tail(toCheck)) argsPrimary argsSecundary
+
+deletePath2 xe dir xa userGroupList userID sdlist vglist lvlist linklist fslist unused name argsPrimary argsSecundary= do
+	if (isNow 0 dir xe) == False then do
+		putStrLn "User deleted, could not delete the path for the user because it does not exist"
+		dellUserModify2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID argsPrimary argsSecundary
+	else if isEmpty xe 0 dir == False then do
+		putStrLn "The path for the user still exist, it contain files"
+		dellUserModify2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID argsPrimary argsSecundary
+	else if (isNow 0 dir xe) && isEmpty xe 0 dir then do
+		dellUserModify2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID argsPrimary argsSecundary
+		--body ((take ((getElem 0 dir xe)) xe )++(drop ((getElem 0 dir xe)+1) xe )) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		putStrLn "Error to delete path for the user"
+		
+deleteUserFromGroup2 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck name argsPrimary argsSecundary = do
+	if(null toCheck) then do
+		if(null argsSecundary) then do
+			createNewUser xe xa userID [] userGroupList [argsPrimary] name	0 sdlist vglist lvlist linklist fslist unused
+		else do 
+			createNewUser xe xa userID [] userGroupList ([argsPrimary,"-G"]++argsSecundary) name	0 sdlist vglist lvlist linklist fslist unused
+	else do
+		deleteUserFromGroup2 xe xa (userGroupList++[ [ (((toCheck!!0)!!0)),(((toCheck!!0)!!1)),(delName name (((toCheck!!0)!!2))),(delName name (((toCheck!!0)!!3))) ] ]) userID sdlist vglist lvlist linklist fslist unused (tail(toCheck)) name argsPrimary argsSecundary
+
+
+
+
+
 
 
 findUser xe xa userID userGroupList name j sdlist vglist lvlist linklist fslist unused= do
@@ -276,6 +341,10 @@ findUser xe xa userID userGroupList name j sdlist vglist lvlist linklist fslist 
 	else do
 		putStrLn $ "User not found"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+
+
+
+
 
 deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name i = do
 	if (i > ((length(userID)-1))) then do
@@ -334,6 +403,23 @@ deletePath xe dir xa userGroupList userID sdlist vglist lvlist linklist fslist u
 	else do
 		putStrLn "Error to delete path for the user"
 		
+deleteGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name toCheck = do
+	if(null toCheck) then do
+		putStrLn "Borrado"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		if( (((toCheck!!0)!!0)!!0) == name) then do
+			putStrLn"Found it"
+			if( (length(toCheck)) == 1 ) then
+				deleteGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name []
+			else do 
+				deleteGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name (tail(toCheck))
+		else do 
+			if( (length(toCheck)) == 1) then do 
+				deleteGroup xe xa (userGroupList++[head(toCheck)]) userID sdlist vglist lvlist linklist fslist unused name []
+			else do
+				deleteGroup xe xa (userGroupList++[head(toCheck)]) userID sdlist vglist lvlist linklist fslist unused name (tail(toCheck))
+
 --Username
 --UID		path
 --Associated primary group:
@@ -495,7 +581,7 @@ addFiles mode xe add xa userGroupList userID sdlist vglist lvlist linklist fslis
 	now <- getCurrentTime
 	time <- getCurrentTimeZone
 	if isNow 0 add xe then do
-		putStrLn $"Error creating the path: '"++(show(add))++"' already exist"
+		--putStrLn $"Error creating the path: '"++(show(add))++"' already exist"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if ("/" `isInfixOf` add )then do
 		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -514,13 +600,11 @@ addFiles2 mode modeT cont dir xe add xa userGroupList userID sdlist vglist lvlis
 		
 splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if (cont == 0) then do
-		putStrLn "s"
+		--putStrLn "s"
 		addFiles2 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (cont == (length dir)-1) && modeT == "-" then do
-		putStrLn "Entra"
 		addFiles2 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (cont < length dir) && (cont /= 0) then do
-		putStrLn "5"
 		addFiles2 "d" modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused	
 	else
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
