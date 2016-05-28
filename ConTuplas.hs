@@ -305,6 +305,7 @@ deleteUser2 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unus
 
 deleteUserFromGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck name= do
 	if(null toCheck) then do
+		--putStrLn$(show(xe))
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		deleteUserFromGroup xe xa (userGroupList++[ [ (((toCheck!!0)!!0)),(((toCheck!!0)!!1)),(delName name (((toCheck!!0)!!2))),(delName name (((toCheck!!0)!!3))) ] ]) userID sdlist vglist lvlist linklist fslist unused (tail(toCheck)) name
