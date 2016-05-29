@@ -61,6 +61,11 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if  head(words(op)) == "finger" && length(words(op))==2 then do			--The sinstaxis must be correct
 		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 
+	else if  head(words(op)) == "userdel" && length(words(op))==2 then do			--The sinstaxis must be correct
+		deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!1) 0
+		--findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
+		
+		
 	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (numberCheck ((words(op))!!2))) then do
 		createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!3) ((words(op))!!2) 0
 
@@ -130,6 +135,7 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
+		putStrLn $ ("Sintaxis error")
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 --updateVGstate usersToCheck sdlist = do
@@ -144,9 +150,7 @@ listHasLVM i usersToCheck sdlist = do
 			False						
 	else do
 		True
-	--isManagedByLVM sdlist sdname
-		  
-	
+
 {----------------------------------------------------------------Volume Groups----------------------------------------------------------}
 alreadyVG cont aList xe = do
 	if (cont < length aList) then do
@@ -200,7 +204,10 @@ showAllUsers xe xa userID userGroupList users groups sdlist vglist lvlist linkli
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn $ ((users!!0)!!0)++"\t\t\t"++((users!!0)!!1)++"\t\t\t"++show(findPrimaryFor ((users!!0)!!0) groups [] 0)++"\t\t\t"++show(findSecundaryFor ((users!!0)!!0) groups [] 0)++"\t\t\t"++" /home/"++((users!!0)!!0)
-		showAllUsers xe xa userID userGroupList (tail(users)) groups sdlist vglist lvlist linklist fslist unused 
+		if ((length(users))==1) then do
+			showAllUsers xe xa userID userGroupList [] groups sdlist vglist lvlist linklist fslist unused
+		else do
+			showAllUsers xe xa userID userGroupList (tail(users)) groups sdlist vglist lvlist linklist fslist unused 
 		
 findPrimaryFor user groups answer n=
 	if( n <= (length(groups)-1) ) then do
@@ -259,6 +266,7 @@ addNewUserPrimary xe xa userID userGroupList toCheck j primary secondary name sd
 addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist vglist lvlist linklist fslist unused= do
 	if( null secondary) then do
 		--body xe xa (userGroupList++toCheck) userID
+
 		addFiles "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused 	
 	else if (null toCheck) then do
 		putStrLn $ "A secondary does not exist"++name		
@@ -274,7 +282,7 @@ addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist
 				addNewUserSecondary xe xa userID userGroupList toCheck (i+1) (0) secondary name sdlist vglist lvlist linklist fslist unused
 		else do																						--The secondary does not exist
 			(addNewUserSecondary xe xa userID (userGroupList++toCheck) [] 0 0 secondary name) sdlist vglist lvlist linklist fslist unused
-					
+
 concatenate xe xa userID userGroupList answer toCheck secondary name sdlist vglist lvlist linklist fslist unused=
 	if (null toCheck && null secondary) then do
 		addNewUserSecondary xe xa userID userGroupList (answer) 0 0 [] name sdlist vglist lvlist linklist fslist unused
@@ -282,7 +290,6 @@ concatenate xe xa userID userGroupList answer toCheck secondary name sdlist vgli
 		addNewUserSecondary xe xa userID userGroupList (answer++toCheck) 0 0 secondary name	sdlist vglist lvlist linklist fslist unused
 	else if(null secondary) then do
 		addNewUserSecondary xe xa userID userGroupList (answer++toCheck) 0 0 [] name sdlist vglist lvlist linklist fslist unused
-
 	else do																		--there are still elements to concatenate
 		if( (((toCheck!!0)!!0)!!0) == (secondary!!0) ) then do 							--This is the place to add
 			if(length(secondary)<=1 && (length(toCheck))<=1) then do
@@ -309,10 +316,66 @@ findUser xe xa userID userGroupList name j sdlist vglist lvlist linklist fslist 
 			printUserInformation xe xa [] userID name ((userID!!j)!!0) userGroupList 0 0 [] [] sdlist vglist lvlist linklist fslist unused
 		else do
 			findUser xe xa userID userGroupList name (j+1) sdlist vglist lvlist linklist fslist unused
-			
 	else do
 		putStrLn $ "User not found"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+
+deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name i = do
+	if (i > ((length(userID)-1))) then do
+		putStrLn$"The user does not exist"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do 
+		if( name == ((userID!!i)!!0)) then do -- the user exist
+			 --deleteUser2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID
+			deletePath xe ("home/"++((userID!!i)!!0)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused name
+		else do
+			deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name (i+1)
+
+deleteUser2 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused name toCheck= do
+	if(null toCheck) then do
+		deleteUserFromGroup xe xa [] (userID) sdlist vglist lvlist linklist fslist unused userGroupList name -- Erase from the user groups
+	else do
+		if (name == ((toCheck!!0)!!0) ) then do	
+			if( (length(toCheck)) == 1) then do
+				deleteUser2 xe xa userGroupList (userID) sdlist vglist lvlist linklist fslist unused name []
+			else 
+				deleteUser2 xe xa userGroupList (userID) sdlist vglist lvlist linklist fslist unused name (tail(toCheck)) 	
+		else 
+			if((length(toCheck))==1) then do
+				deleteUser2 xe xa userGroupList (userID++[head(toCheck)]) sdlist vglist lvlist linklist fslist unused name []
+			else do
+				deleteUser2 xe xa userGroupList (userID++[head(toCheck)]) sdlist vglist lvlist linklist fslist unused name (tail(toCheck))
+
+deleteUserFromGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck name= do
+	if(null toCheck) then do
+		--putStrLn$(show(xe))
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		deleteUserFromGroup xe xa (userGroupList++[ [ (((toCheck!!0)!!0)),(((toCheck!!0)!!1)),(delName name (((toCheck!!0)!!2))),(delName name (((toCheck!!0)!!3))) ] ]) userID sdlist vglist lvlist linklist fslist unused (tail(toCheck)) name
+		
+delName name toCheck = do
+	if(null toCheck) then do
+		[]
+	else do
+		if(name == toCheck!!0) then do
+			delName name (tail(toCheck))
+		else do 
+			[head(toCheck)] ++ (delName name (tail(toCheck)))
+
+deletePath xe dir xa userGroupList userID sdlist vglist lvlist linklist fslist unused name= do
+	--putStrLn $ show (isNow 0 dir xe)
+	--putStrLn $ show (isEmpty xe 0 dir)
+	if (isNow 0 dir xe) == False then do
+		putStrLn "User deleted, could not delete the path for the user because it does not exist"
+		deleteUser2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID
+	else if isEmpty xe 0 dir == False then do
+		putStrLn "The path for the user still exist, it contain files"
+		deleteUser2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID
+	else if (isNow 0 dir xe) && isEmpty xe 0 dir then do
+		deleteUser2 xe xa userGroupList [] sdlist vglist lvlist linklist fslist unused name userID
+		--body ((take ((getElem 0 dir xe)) xe )++(drop ((getElem 0 dir xe)+1) xe )) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		putStrLn "Error to delete path for the user"
 		
 --Username
 --UID		path
@@ -349,8 +412,8 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 
 		else do		
 			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize (i+1)
-	else do  				--call to create the path
-		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+	else do  				--call to create the path		The first name indicates if LVM 	The second one indicates if it belongs to a volume group
+		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null","null"]]) vglist lvlist linklist fslist unused
 		--body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
@@ -475,7 +538,7 @@ addFiles mode xe add xa userGroupList userID sdlist vglist lvlist linklist fslis
 	now <- getCurrentTime
 	time <- getCurrentTimeZone
 	if isNow 0 add xe then do
-		putStrLn "Already exists"
+		putStrLn $"Error creating the path: '"++(show(add))++"' already exist"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if ("/" `isInfixOf` add )then do
 		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
