@@ -749,7 +749,7 @@ removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist 
 	else do 
 		if ( ((fsToCheck!!0)!!1) == toRemove ) then do
 			if( ((fsToCheck!!0)!!2) == "LVM" ) then do
-				putStrLn$"Can't delete it, it has a LVM
+				putStrLn$"Can't delete it, it has a LVM"
 				body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
 			else do 
 				putStrLn$"Can't delete it, it is used by a File System"
