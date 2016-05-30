@@ -15,7 +15,7 @@ import Data.List
 import Data.List.Split
 import Data.Char
 import Data.Time
-import Data.Either
+--import Data.Either
 main:: IO()
 
 -- [(path, size, True),(path, size, True)]
@@ -26,7 +26,7 @@ main = do
 	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
-
+	putStrLn $ show linklist
 	putStrLn $ show vglist
 	putStrLn $ show xe
 
@@ -130,7 +130,7 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		putStrLn "Digite la carpte"
 		line <- getLine
 		moveDirectory line xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-	
+		
 	else if op == "vgcreate" then do
 		name <- getLine
 		list <- getLine
@@ -144,13 +144,54 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		else do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+					
+	else if (head(words(op)) == "ln") && (head(tail(words(op))) == "-s") && length(words(op))==4 then do
+		if (isNow 0 (head(tail(tail(words(op))))) xe) then do 
+			addFiles "-" xe (head(tail(tail(tail(words(op)))))) xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "-"):linklist) fslist unused
+			--body xe xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "d"):linklist) fslist unused 
+		else do
+			putStrLn "Nop"
+	else if (head(words(op)) == "cd") && length(words(op))==2 then do
+		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "d") then do
+			putStrLn "moviendo"
+			moveDirectory (s(linklist!!(getLink 0 (head(tail(words(op)))) linklist) )) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op)) == "echo") && length(words(op))==3 then do
+		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "-") then do
+			echoFile xe xa (head(tail(words(op)))) (s(linklist!!(getLink 0 (head(tail(tail(words(op))))) linklist) )) userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn $ ("Sintaxis error")
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 --updateVGstate usersToCheck sdlist = do
 	--actualizar el estado de utilziado por un VG a todos los storage device que reciba, ["","","",estado de VG]	
+{---------------}
+linkCreate pathReal pathLink typePath = do
+	(pathLink++"->"++pathReal,pathReal,pathLink,"",typePath,"l","") 
 
+	
+getLink cont name linklist = do
+	if (cont < length (linklist) )then do
+		if t (linklist !!cont ) == name then do 
+			cont
+		else do
+			getLink (cont +1) name linklist 
+	else do
+		cont
+isLink cont name linklist = do
+	if (cont < length linklist )then do
+		if (t(linklist!!cont) == name)  then do 
+			True
+		else do
+			isLink (cont +1) name linklist 
+	else 
+		False
+
+
+{---------------}
 			
 listHasLVM i usersToCheck sdlist = do
 	if(i<=(length(usersToCheck)-1)) then do
@@ -672,6 +713,8 @@ moveDirectory dir xe xa userGroupList userID sdlist vglist lvlist linklist fslis
 	else if (s(head xe) == "/") && (isNow 0 dir xe) && (l(xe !! (getElem 0 dir xe)) == "d") then do
 		body ((xe !! getElem 0 dir xe):tail xe) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if  (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "d") then do
+		body ((xe !! ((getElem 0 dir xe))):tail xe) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if  (isNow 0 (dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "d") then do
 		body ((xe !! ((getElem 0 dir xe))):tail xe) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if  (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
 		putStrLn "Archivo"
