@@ -28,7 +28,7 @@ main = do
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	--putStrLn $ show linklist
 	putStrLn $ show vglist
-	putStrLn $ show sdlist
+	--putStrLn $ show sdlist
 
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
@@ -135,8 +135,7 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if ( ((length(words(op))) >= 3 ) && (((words(op))!!0) == "vgcreate") ) then do
 		
 		if ( (alreadyVG 0 (tail(tail(words(op)))) xe) && (listHasLVM 0  (tail(tail(words(op)))) sdlist ) ) then do
-			--putStrLn $ ("El tamaño es:  "  ++((getSumOfStorage sdlist (tail(tail(words(op)))))) )
-			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist (words(op)!!1) (tail(tail(words(op)))) 100 ) lvlist linklist fslist unused		
+			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist (words(op)!!1) (tail(tail(words(op)))) (getSumOfStorage sdlist (tail(tail(words(op)))) 0 ) ) lvlist linklist fslist unused		
 		else if (not (alreadyVG 0 (tail(tail(words(op)))) xe) ) then do 
 			putStrLn "Error creating VG, A volume does not exist"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -227,12 +226,40 @@ getSumOfStorage sdlist names answer= do
 	if (null sdlist) then do
 		answer
 	else do
-		if(elem (((sdlist)!!0)!!0) names) then do
-			getSumOfStorage (tail(sdlist)) names (answer+((sdlist!!0)!!1))
+		if( elem (((sdlist)!!0)!!0) names) then do
+			getSumOfStorage (tail(sdlist)) names ( answer + (getIntegerFrom ((sdlist!!0)!!1) 0 0) )
 		else do 
-			getSumOfStorage (tail(sdlist)) names answer
-
-
+			if( length(sdlist) == 1) then do
+				getSumOfStorage [] names answer
+			else do
+				getSumOfStorage (tail(sdlist)) names answer
+		
+getIntegerFrom toCheck power int = do
+	if(null toCheck) then do
+		int
+	else if( (last(toCheck)) =='0') then do
+		getIntegerFrom (init(toCheck)) (power+1) (int) 
+	else if( (last(toCheck)) =='1') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((1)*(10^power)+int)
+	else if( (last(toCheck)) =='2') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((2)*(10^power)+int)
+	else if( (last(toCheck)) =='3') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((3)*(10^power)+int)
+	else if( (last(toCheck)) =='4') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((4)*(10^power)+int)
+	else if( (last(toCheck)) =='5') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((5)*(10^power)+int)
+	else if( (last(toCheck)) =='6') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((6)*(10^power)+int)
+	else if( (last(toCheck)) =='7') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((7)*(10^power)+int)
+	else if( (last(toCheck)) =='8') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((8)*(10^power)+int)
+	else if( (last(toCheck)) =='9') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((9)*(10^power)+int)
+	else 
+		0
+	
 {-getSumOfStorage sdlist names = do 
 	if(null names) then do
 		0
