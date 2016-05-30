@@ -70,7 +70,11 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 
 	else if  head(words(op)) == "userdel" && length(words(op))==2 then do			--The sinstaxis must be correct
-		deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!1) 0
+		if( ((words(op))!!1) == "root") then do
+			putStrLn$"Well well you are trying to delete root, really?"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do 
+			deleteUser xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!1) 0
 		--findUser xe xa userID userGroupList ((words(op))!!1) 0 sdlist vglist lvlist linklist fslist unused
 		
 	else if  head(words(op)) == "groupdel" && length(words(op))==2 then do			--The sinstaxis must be correct
