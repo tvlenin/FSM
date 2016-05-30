@@ -31,13 +31,14 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	--putStrLn $ show sdlist
 
 	op <- getLine
-	if  head(words(op)) == "print" then			--The sinstaxis must be correct
-		printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused
+	if  (op == "") then			--The sinstaxis must be correct
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
 	{-	Command : #groupadd <nombre del grupo> 
 		Here is possible to add a new user group-}	
 	else if  head(words(op)) == "groupadd" && length(words(op))==2 then			--The sinstaxis must be correct
-		addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]] sdlist vglist lvlist linklist fslist unused	--Call the function to add the new group
-
+		--addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]] sdlist vglist lvlist linklist fslist unused	--Call the function to add the new group
+		addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ( (getIntegerFrom ((((last(userGroupList))!!1)!!0)) 0 0) +1) ],[],[]] sdlist vglist lvlist linklist fslist unused	--Call the function to add the new group
  	else if (head(words(op)) == "show") && (head(tail(words(op))) == "groups") && length(words(op))==2 then do
 		putStrLn $ "GroupName\t\tGID\t\tAssociated Primary Users \t\t AssociatedAsSecondaryUsers"
 		showAllgroups xe xa userID userGroupList 0 sdlist vglist lvlist linklist fslist unused
@@ -144,9 +145,10 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 				
+																		
 	else if ( (head(words(op)) == "lvcreate") && (length(words(op)) == 6) && ((words(op)!!1) == "-L") && ((words(op)!!3) == "-n")) then do 
 		if((numberCheck ((words(op))!!2))) then do
-			putStrLn$"ok"
+			valueLogicalVolume xe xa userGroupList userID sdlist [] lvlist linklist fslist unused vglist ((words(op))!!2) ((words(op))!!4) ((words(op))!!5)
 		else do 
 			putStrLn$"The size must be an integer"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -234,31 +236,7 @@ getSumOfStorage sdlist names answer= do
 			else do
 				getSumOfStorage (tail(sdlist)) names answer
 		
-getIntegerFrom toCheck power int = do
-	if(null toCheck) then do
-		int
-	else if( (last(toCheck)) =='0') then do
-		getIntegerFrom (init(toCheck)) (power+1) (int) 
-	else if( (last(toCheck)) =='1') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((1)*(10^power)+int)
-	else if( (last(toCheck)) =='2') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((2)*(10^power)+int)
-	else if( (last(toCheck)) =='3') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((3)*(10^power)+int)
-	else if( (last(toCheck)) =='4') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((4)*(10^power)+int)
-	else if( (last(toCheck)) =='5') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((5)*(10^power)+int)
-	else if( (last(toCheck)) =='6') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((6)*(10^power)+int)
-	else if( (last(toCheck)) =='7') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((7)*(10^power)+int)
-	else if( (last(toCheck)) =='8') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((8)*(10^power)+int)
-	else if( (last(toCheck)) =='9') then do
-		getIntegerFrom (init(toCheck)) (power+1) ((9)*(10^power)+int)
-	else 
-		0
+
 	
 {-getSumOfStorage sdlist names = do 
 	if(null names) then do
@@ -609,7 +587,26 @@ printUserInformation xe xa userGroupList userID name id toCheck i j asPrimary as
 		printUserInformation xe xa (userGroupList++ [head(toCheck)]) userID name id (tail(toCheck)) 0 0 asPrimary asSecondary sdlist vglist lvlist linklist fslist unused
 		
 		
-		
+{------------------------------------------------Functions to logical volume--------------------------------------------------------}		
+
+valueLogicalVolume xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck size volName vgName = do
+	if(null toCheck ) then do
+		putStrLn "The volume group doesn't exist"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do 
+		if ( f(toCheck!!0) == vgName ) then do
+			putStrLn$"espacio disponible :  "++(show((si(toCheck!!0))))
+			putStrLn$"espacio que pido :  "++(show(getIntegerFrom size 0 0))
+			if( (si(toCheck!!0)) >= (getIntegerFrom size 0 0) ) then do
+				--[(f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((s(toCheck!!0))++[volName]),(si(toCheck!!0)), ((l(toCheck!!0))-size) ] 
+				body xe xa userGroupList userID sdlist (vglist ++ [( (f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((s(toCheck!!0))++[volName]),(si(toCheck!!0)),  ( (l(toCheck!!0)) - (getIntegerFrom size 0 0))   )]  ++(tail(toCheck))) lvlist linklist fslist unused
+			else do
+				putStrLn "Not enough space"
+				body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do
+			valueLogicalVolume xe xa userGroupList userID sdlist (vglist++[head(toCheck)]) lvlist linklist fslist unused (tail(toCheck)) size volName vgName
+
+			 
 {------------------------------------------------Functions to storage device--------------------------------------------------------}
 createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize i= do
 	if( i <= ((length(sdlist))-1)) then do
@@ -888,4 +885,29 @@ numberCheck txt = do
    			numberCheck (tail(txt))
  	else 
   		False
-  
+		  
+getIntegerFrom toCheck power int = do
+	if(null toCheck) then do
+		int
+	else if( (last(toCheck)) =='0') then do
+		getIntegerFrom (init(toCheck)) (power+1) (int) 
+	else if( (last(toCheck)) =='1') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((1)*(10^power)+int)
+	else if( (last(toCheck)) =='2') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((2)*(10^power)+int)
+	else if( (last(toCheck)) =='3') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((3)*(10^power)+int)
+	else if( (last(toCheck)) =='4') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((4)*(10^power)+int)
+	else if( (last(toCheck)) =='5') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((5)*(10^power)+int)
+	else if( (last(toCheck)) =='6') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((6)*(10^power)+int)
+	else if( (last(toCheck)) =='7') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((7)*(10^power)+int)
+	else if( (last(toCheck)) =='8') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((8)*(10^power)+int)
+	else if( (last(toCheck)) =='9') then do
+		getIntegerFrom (init(toCheck)) (power+1) ((9)*(10^power)+int)
+	else 
+		0
