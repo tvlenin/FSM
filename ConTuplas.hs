@@ -27,13 +27,6 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do 
 
-	--putStrLn $ show linklist
-	--putStrLn $ show vglist
-	--putStrLn $ show xe
-	--putStrLn $ show vglist
-	--putStrLn $ show sdlist
-
-
 	op <- getLine
 	if  (op == "") then			--The sinstaxis must be correct
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
@@ -188,6 +181,14 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do
 			putStrLn$"The size must be an integer"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	
+	else if ( (head(words(op)) == "lvremove") && (length(words(op)) == 2)) then do
+		putStrLn"Are you sure to delete it? y/n"
+		ans <- getLine
+		if(ans=="y")then do
+			removelogicalVolume xe xa userGroupList userID sdlist vglist [] linklist fslist mplist lvlist ((words(op))!!1)
+		else do 		
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+			
 	else if ( (length(words(op)))==1 && ((((words(op))!!0)=="vgdisplay" ) || ((words(op))!!0)=="vgs" )) then do
 		showInfoOfVG xe xa userGroupList userID sdlist [] lvlist linklist fslist mplist vglist
 		
@@ -725,12 +726,37 @@ valueLogicalVolume xe xa userGroupList userID sdlist vglist lvlist linklist fsli
 		if ( f(toCheck!!0) == vgName ) then do
 			if( (si(toCheck!!0)) >= (getIntegerFrom size 0 0) ) then do
 				--[(f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((s(toCheck!!0))++[volName]),(si(toCheck!!0)), ((l(toCheck!!0))-size) ] 
-				body xe xa userGroupList userID sdlist (vglist ++ [( (f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((fi(toCheck!!0))++[volName]),(si(toCheck!!0)),  ( (l(toCheck!!0)) - (getIntegerFrom size 0 0))   )]  ++(tail(toCheck))) (lvlist++[volName,size,vgName]) linklist fslist mplist
+				body xe xa userGroupList userID sdlist (vglist ++ [( (f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((fi(toCheck!!0))++[volName]),(si(toCheck!!0)),  ( (l(toCheck!!0)) - (getIntegerFrom size 0 0))   )]  ++(tail(toCheck))) (lvlist++[[volName,size,vgName]]) linklist fslist mplist
 			else do
 				putStrLn "Not enough space"
 				body xe xa userGroupList userID sdlist (vglist++toCheck) lvlist linklist fslist mplist
 		else do
 			valueLogicalVolume xe xa userGroupList userID sdlist (vglist++[head(toCheck)]) lvlist linklist fslist mplist (tail(toCheck)) size volName vgName
+
+removelogicalVolume xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck toRemove = do
+	if(null toCheck) then do
+		putStrLn"The volumne does not exist"
+		body xe xa userGroupList userID sdlist vglist (lvlist) linklist fslist mplist
+	else do
+		if ( ((toCheck!!0)!!0) == toRemove ) then do
+			putStrLn"borrando"
+			removeLV xe xa userGroupList userID sdlist vglist (lvlist++tail(toCheck)) linklist fslist mplist (head(toCheck)) toRemove fslist
+		else do
+			putStrLn"borrando"
+			removelogicalVolume xe xa userGroupList userID sdlist vglist (lvlist++[head(toCheck)]) linklist fslist mplist (tail(toCheck)) toRemove
+	
+removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist listToDel toRemove fsToCheck = do 
+	if(null fsToCheck) then do
+		--a boorar
+		putStrLn"borrado"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist 
+	else do 
+		if ( ((fsToCheck!!0)!!1) == toRemove ) then do
+			putStrLn$"Can't delete it, it is used by a File System"
+			body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
+		else do
+			removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist listToDel toRemove (tail(fsToCheck)) 
+	
 
 showInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck= do
 	if(null toCheck) then do
