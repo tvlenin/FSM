@@ -38,9 +38,15 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do
 	if  (op == "") then			--The sinstaxis must be correct
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	
+	else if  head(words(op)) == "showall" && length(words(op))==1 then do			--The sinstaxis must be correct
+		--addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]] sdlist vglist lvlist linklist fslist mplist	--Call the function to add the new group
+		putStrLn$"---------------------------------------------------------------------------------------------------"
+		putStrLn$"Group name \t\t\t Gorup id \t\t\t Users as Primary \t\t\t Users as Secondary"
+		showAllStart xe xa [] userID sdlist vglist lvlist linklist fslist mplist userGroupList
+		
 	{-	Command : #groupadd <nombre del grupo> 
 		Here is possible to add a new user group-}	
-	else if  head(words(op)) == "groupadd" && length(words(op))==2 then			--The sinstaxis must be correct
+	else if  head(words(op)) == "groupadd" && length(words(op))==2 then do			--The sinstaxis must be correct
 		--addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ((read ((((last(userGroupList))!!1)!!0)) :: Integer)+1) ],[],[]] sdlist vglist lvlist linklist fslist mplist	--Call the function to add the new group
 		addUserGroup xe xa userID userGroupList [[(words(op)!!1)],[ show ( (getIntegerFrom ((((last(userGroupList))!!1)!!0)) 0 0) +1) ],[],[]] sdlist vglist lvlist linklist fslist mplist	--Call the function to add the new group
  	else if (head(words(op)) == "show") && (head(tail(words(op))) == "groups") && length(words(op))==2 then do
@@ -376,6 +382,56 @@ showAllgroups xe xa userID userGroupList i sdlist vglist lvlist linklist fslist 
 		showAllgroups xe xa userID userGroupList (i+1) sdlist vglist lvlist linklist fslist mplist
 	else do
 		body xe xa userGroupList userID	sdlist vglist lvlist linklist fslist mplist
+	
+	
+showAllStart xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do 
+	if(null toCheck) then do
+		putStrLn$"---------------------------------------------------------------------------------------------------"
+		putStrLn$"Username \t\t\t userID \t\t\t LVM "
+		showAllSecondUsers xe xa userGroupList [] sdlist vglist lvlist linklist fslist mplist userID		
+	else do
+		putStrLn$(show(((toCheck!!0)!!0)!!0))++"\t\t\t\t"++(show(((toCheck!!0)!!1)!!0))++"\t\t\t\t"++(show(((toCheck!!0)!!2)))++"\t\t\t"++(show(((toCheck!!0)!!3)))
+		showAllStart xe xa (userGroupList++[head(toCheck)]) userID sdlist vglist lvlist linklist fslist mplist (tail(toCheck))
+
+showAllSecondUsers xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do
+	if(null toCheck) then do 
+		putStrLn$"---------------------------------------------------------------------------------------------------"
+		putStrLn$"Storage device name \t\t\t Size \t\t\t Managed by LVM"
+		showAllDeviceFirst xe xa userGroupList userID [] vglist lvlist linklist fslist mplist sdlist
+	else do 
+		--putStrLn$show(head(toCheck))
+		putStrLn$ (show((toCheck!!0)!!0))++"\t\t\t"++(show((toCheck!!0)!!1)) -- ++"\t\t\t" ++(show((toCheck!!0)!!2))
+		if(length(toCheck)==1) then do
+			showAllSecondUsers xe xa userGroupList (userID++[head(toCheck)]) sdlist vglist lvlist linklist fslist mplist []
+		else do
+			showAllSecondUsers xe xa userGroupList (userID++[head(toCheck)]) sdlist vglist lvlist linklist fslist mplist (tail(toCheck))
+
+showAllDeviceFirst xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do
+	if(null toCheck) then do 
+		putStrLn$"---------------------------------------------------------------------------------------------------"
+		putStrLn$"Volume group name \t Phsysical Storages \t N Phy.Stgs \t\t N Logical Srgs \t Logical Storages \t\t Total size \t\t\t Free size"
+		showAllVolumeGroup xe xa userGroupList userID sdlist [] lvlist linklist fslist mplist vglist
+	else do
+		putStrLn$ (show((toCheck!!0)!!0))++"\t\t\t\t"++ (show((toCheck!!0)!!1))++"\t\t\t\t"++(show((toCheck!!0)!!2))
+		showAllDeviceFirst xe xa userGroupList userID (sdlist++[head(toCheck)]) vglist lvlist linklist fslist mplist (tail(toCheck))
+
+showAllVolumeGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do
+	if (null toCheck) then do 
+		putStrLn$"---------------------------------------------------------------------------------------------------"
+		putStrLn$"File System \t Type \t mount point"
+		showAllFSInfo xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist fslist
+	else do
+		putStrLn$( (show(f(toCheck!!0)))++"\t\t\t"++ (show(s(toCheck!!0)))++"\t\t\t\t"++(show(t(toCheck!!0)))++"\t\t\t"++(show(fo(toCheck!!0)))++"\t\t"++(show(fi(toCheck!!0)))++"\t\t\t"++(show(si(toCheck!!0)))++"\t\t\t\t"++(show(l(toCheck!!0))))
+
+		
+showAllFSInfo xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do
+	if(null toCheck) then do 
+		putStrLn"----"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+	else do
+		putStrLn$ (show((toCheck!!0)!!0))++"\t\t" ++(show((toCheck!!0)!!1))++"\t\t"++(show((toCheck!!0)!!2))
+		showAllFSInfo xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist (tail(toCheck))
+		
 		
 {-This prints all the required information about all the users.
 -}
