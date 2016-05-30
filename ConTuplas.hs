@@ -26,7 +26,7 @@ main = do
 	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
-	--putStrLn $ show linklist
+	putStrLn $ show linklist
 
 	--putStrLn $ show vglist
 	putStrLn $ show xe
@@ -155,8 +155,16 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
-	--else if  ((length(words(op))) == 3 ) && (((words(op))!!0) == "vgextend")  then do
-	--	body xe xa userGroupList userID sdlist (vgExtend 0 vglist ((words(op))!!1) (last(words(op)))(getSize sdlist (last(words(op))) ) )  lvlist linklist fslist unused
+	else if  ((length(words(op))) == 3 ) && (((words(op))!!0) == "vgextend")  then do
+		putStrLn $ (show ((getSize sdlist (last(words(op))))))
+		body xe xa userGroupList userID sdlist (vgExtend 0 vglist ((words(op))!!1)  (last(words(op)))   (getSize sdlist (last(words(op))))    ) lvlist linklist fslist unused 
+	else if  ((length(words(op))) == 3 ) && (((words(op))!!0) == "vgreduce")  then do
+		putStrLn $ (show ((getSize sdlist (last(words(op))))))
+		body xe xa userGroupList userID sdlist (vgReduce 0 vglist ((words(op))!!1)  (last(words(op)))   (getSize sdlist (last(words(op))))    ) lvlist linklist fslist unused 
+	
+		
+		
+		--body xe xa userGroupList userID sdlist (vgExtend 0 vglist ((words(op))!!1) (last(words(op)))(getSize sdlist (last(words(op))) ) )  lvlist linklist fslist unused
 	else if ( (head(words(op)) == "lvcreate") && (length(words(op)) == 6) && ((words(op)!!1) == "-L") && ((words(op)!!3) == "-n")) then do 
 		if((numberCheck ((words(op))!!2))) then do
 			valueLogicalVolume xe xa userGroupList userID sdlist [] lvlist linklist fslist unused vglist ((words(op))!!2) ((words(op))!!4) ((words(op))!!5)
@@ -165,15 +173,18 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 			
 	else if (head(words(op)) == "ln") && (head(tail(words(op))) == "-s") && length(words(op))==4 then do
+		putStrLn $ show (head(tail(tail(words(op))))) 
 		if (isNow 0 (head(tail(tail(words(op))))) xe) then do 
 			addFiles "-" xe (head(tail(tail(tail(words(op)))))) xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "-"):linklist) fslist unused
 			--body xe xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "d"):linklist) fslist unused 
 		else do
 			putStrLn "Nop"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	
 	else if (head(words(op)) == "echo") && length(words(op))==3 then do
 		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "-") then do
-			echoFile xe xa (head(tail(words(op)))) (s(linklist!!(getLink 0 (head(tail(tail(words(op))))) linklist) )) userGroupList userID sdlist vglist lvlist linklist fslist unused
+			putStrLn "entra al echo"
+			echoFile xe xa (last(words(op))) (s(linklist!!(getLink 0 (head(tail(words(op)))) linklist) )) userGroupList userID sdlist vglist lvlist linklist fslist unused
 		else do
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
@@ -286,17 +297,38 @@ getVG cont vgname vglist = do
 			getVG (cont + 1) vgname vglist
 	else do
 		cont
-		{-
+	
 vgExtend cont vglist vgname sdName size = do
 	if (cont < (length vglist)) then do
 		if (f(vglist!!cont)) == vgname then do
-			(take (getVG 0 vgname vglist) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop (getVG 0 vgname vglist ) vglist
+			(take ((getVG 0 vgname vglist)) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop ((getVG 0 vgname vglist)+1) vglist
 		else do
 			vgExtend (cont + 1) vglist vgname sdName size
 	else do
-		(take (getVG 0 vgname vglist) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop (getVG 0 vgname vglist ) vglist
-		-}
-		  	
+		(take ((getVG 0 vgname vglist)) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop ((getVG 0 vgname vglist)+1) vglist
+
+vgReduce cont vglist vgname sdName size = do
+	if (cont < (length vglist)) then do
+		
+		
+		if(f(vglist!!cont)) == vgname then do 
+			(take ((getVG 0 vgname vglist)) vglist ) ++ [(vgname,getNewSd (s(vglist!!cont)) sdName ,t(vglist!!cont) - 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) - size,l(vglist!!cont) - size  )]++drop ((getVG 0 vgname vglist)+1) vglist
+		else do
+			vgReduce (cont + 1) vglist vgname sdName size
+	else do
+		(take ((getVG 0 vgname vglist)) vglist ) ++ [(vgname,getNewSd (s(vglist!!cont)) sdName ,t(vglist!!cont) - 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) - size,l(vglist!!cont) - size  )]++drop ((getVG 0 vgname vglist)+1) vglist
+
+getNewSd listsd sdName = do 
+	(take (getSdIndex 0 listsd sdName) listsd ) ++ (drop ((getSdIndex 0 listsd sdName)+1) listsd)
+getSdIndex cont listsd sdName = do
+	if (cont < (length listsd)) then do
+		if(listsd!!cont) == sdName then do
+			cont
+		else
+			getSdIndex (cont+1) listsd sdName
+	else 
+		cont 
+	
 
 {-------------------------------User---Groups----------------------------------------}
 printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused= do
@@ -703,19 +735,23 @@ getSize sdlist name = do
 		0
 	else
 		if ( ((sdlist!!0)!!0) == name ) then do
-			((sdlist!!0)!!1)
+			getIntegerFrom ((sdlist!!0)!!1) 0 0
 		else do
 			getSize (tail(sdlist)) name
 
 			
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
 echoFile xe xa doc dir userGroupList userID sdlist vglist lvlist linklist fslist unused= do
-	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) == "-") then do
+	putStrLn $ show ("/"++ dir)
+	putStrLn $ show (isNow 0 ("/"++ dir) xe)
+	putStrLn $ show (l(xe !! ((getElem 0 dir xe)))  == "-")
+	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) ) == "-" then do
 		--putStrLn $ show((getElem 0 dir xe))
 		let tuple = (f(xe !! (getElem 0 dir xe)),s(xe !! (getElem 0 dir xe)),t(xe !! (getElem 0 dir xe)),fo(xe !! (getElem 0 dir xe)),fi(xe !! (getElem 0 dir xe)),doc,l(xe !! (getElem 0 dir xe)))
 		body ((fhalf 0 xe (getElem 0 dir xe) []) ++ [tuple] ++(shalf ((getElem 0 dir xe)+1) xe (getElem 0 dir xe) []))  xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
 		putStrLn "Fallo"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused	
 fhalf cont xe ind final= do
 	if (cont < ind)then do
 		fhalf (cont+1) xe ind (final ++ [xe!!cont])
