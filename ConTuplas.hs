@@ -104,6 +104,17 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do
 	else if ( (head(words(op))=="pvcreate") && (length(words(op))==2) ) then do
 		addLVMtodevice  xe xa userGroupList userID [] vglist lvlist linklist fslist mplist ((words(op))!!1) sdlist False
 		
+	else if ( (length(words(op)))==4 && ((words(op))!!0)=="mkfs"  && ((words(op))!!1)=="-t" ) then do
+		createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist ((words(op))!!2) ((words(op))!!3) fslist
+		
+	else if ( (length(words(op)))==3 && ((words(op))!!0)=="mount" ) then do
+		mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist ((words(op))!!1) ((words(op))!!2) fslist
+		
+	else if ( (length(words(op)))==2 && ((words(op))!!0)=="df"  && ((words(op))!!1)=="-h" ) then do
+		putStrLn$"FileSystem \t\t\t type \t\t\t Mounted on"
+		showFileSystemOut xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist fslist
+		
+	
 	else if (head(words(op)) == "mkdir") &&(head(tail(words(op))) == "-p") && ("/" `isInfixOf` (last(words(op))) ) && (length(words(op))) == 3 then do
 		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else if (head(words(op)) == "mkdir")&& ("/" `isInfixOf` (last(words(op))) ) == False  && (length(words(op))) == 2 then do
@@ -176,14 +187,14 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do
 		
 	else if ( (length(words(op)))==2 && (((words(op))!!0)=="vgdisplay"|| ((words(op))!!0)=="vgs" )  && (((words(op))!!1)=="-v") ) then do
 		showMoreInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist	vglist
-			
+						
 	else if (head(words(op)) == "ln") && (head(tail(words(op))) == "-s") && length(words(op))==4 then do
 		putStrLn $ show (head(tail(tail(words(op))))) 
 		if (isNow 0 (head(tail(tail(words(op))))) xe) then do 
 			addFiles "-" xe (head(tail(tail(tail(words(op)))))) xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "-"):linklist) fslist mplist
 			--body xe xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "d"):linklist) fslist mplist 
 		else do
-			putStrLn "Nop"
+			putStrLn "Error, the file does no exist"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	
 	else if (head(words(op)) == "echo") && length(words(op))==3 then do
@@ -842,6 +853,39 @@ catFile xe xa dir sdlist vglist lvlist linklist fslist mplist=do
 	else
 		putStrLn "No existe"
 	
+{------------------------------------------------Functions to manage the file system-----------------------------------------------------}	
+createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist exttype path toCheck= do
+	if (null toCheck) then do
+		body xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[exttype,path,"null"]]) mplist
+	else do
+		if ((toCheck!!0)!!0== path) then do
+			putStrLn"It already exist"
+		else 	
+			createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist exttype path (tail(toCheck))
+
+			
+
+
+mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist path mountPointpath toCheck = do
+	if(null toCheck) then do 
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+	else do
+		if (((toCheck!!0)!!1)==path) then do
+			--putStrLn$"ok"
+			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath (tail(toCheck))
+		else do 
+			--(putStrLn$("ok"))
+			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
+
+
+
+showFileSystemOut xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck= do
+	if(null toCheck) then do
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+	else do 
+		putStrLn$( ((toCheck!!0)!!1) ++ "\t\t\t" ++ ((toCheck!!0)!!0) ++ "\t\t\t" ++((toCheck!!0)!!2))
+		showFileSystemOut xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist (tail(toCheck))
+
 {------------------------------------------------Functions to manage the Path-----------------------------------------------------}
 
 rmFiles xe dir xa userGroupList userID sdlist vglist lvlist linklist fslist mplist= do
