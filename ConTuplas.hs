@@ -92,20 +92,18 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 0
 		
 	else if ( (head(words(op))=="rmdev") && (length(words(op))==2)) then do
-		removeStorageDevice xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist
-
+		if( not (haveStorage 0 vglist ((words(op))!!1)) ) then do
+			removeStorageDevice xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist
+		else 
+			putStrLn $"The storage device can't be deleted because it belongs to a volume group"
+			
 	else if ( (head(words(op))=="pvcreate") && (length(words(op))==2) ) then do
 		addLVMtodevice  xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist False
 		
-	else if op == "cdv" then do
-		--putStrLn $ show xa
-		size <- getLine
-		dir <- getLine
-		createdDev size dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-	else if op == "in" then do
-		putStrLn "ingrese el nombre de la carpeta"
-		line <- getLine
-		addFiles "d" xe line xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op)) == "mkdir") &&(head(tail(words(op))) == "-p") && ("/" `isInfixOf` (last(words(op))) ) && (length(words(op))) == 3 then do
+		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op)) == "mkdir")&& ("/" `isInfixOf` (last(words(op))) ) == False  && (length(words(op))) == 2 then do
+		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if op == "rm" then do
 		putStrLn "ingrese el nombre de la carpeta"
 		line <- getLine
@@ -225,7 +223,24 @@ alreadyVG cont aList xe = do
 addVolumeGroups cont volumeList vgName listpv size = do
 	(volumeList ++ [(vgName,listpv,length listpv,0,[""],size,size)])
 	
---addpv volumeList vgName pvPath = do
+haveStorage cont vglist sdName = do
+	if (cont < (length vglist)) then do
+		if (isInVG 0 (s(vglist!!cont)) sdName) then do
+			True
+		else do
+			haveStorage (cont + 1) vglist sdName
+	else do
+		False
+			
+		
+isInVG cont sdList name = do
+	if(cont < (length sdList) ) then do
+		if (sdList !! cont) == name then do
+			True
+		else do
+			isInVG (cont + 1) sdList name
+	else do
+		False
 	
 
 {-------------------------------User---Groups----------------------------------------}
