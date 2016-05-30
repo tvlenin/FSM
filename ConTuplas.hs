@@ -531,7 +531,7 @@ addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist
 	if( null secondary) then do
 		--body xe xa (userGroupList++toCheck) userID
 
-		addFiles "user" "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist mplist 	
+		addFiles ((((toCheck!!0)!!0)!!0)++":"++name) "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist mplist 	
 
 	else if (null toCheck) then do
 		putStrLn $ "A secondary does not exist"++name		
@@ -981,14 +981,15 @@ createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist fslist
 
 mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist path mountPointpath toCheck = do
 	if(null toCheck) then do 
+		putStrLn$"ok"
 		--body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
-		addFiles "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist  
+		addFiles "root" "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist  
 	else do
 		if (((toCheck!!0)!!1)==path) then do
-			--putStrLn$"ok"
+			putStrLn$"ok"
 			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath (tail(toCheck))
 		else do 
-			--(putStrLn$("ok"))
+			(putStrLn$("ok"))
 			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
 
 uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fslisttoCheck = do 
