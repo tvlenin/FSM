@@ -26,9 +26,9 @@ main = do
 	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
-	putStrLn $ show linklist
-	putStrLn $ show vglist
-	putStrLn $ show xe
+	--putStrLn $ show linklist
+	--putStrLn $ show vglist
+	--putStrLn $ show xe
 
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
@@ -84,10 +84,10 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!3) ((words(op))!!2) 0
 
 	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (not(numberCheck ((words(op))!!2)))) then do
-		putStrLn$"Size must no contain letters"
+		putStrLn$"Size must be an integer"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
-	else if ( (head(words(op))=="fdisk") && (((words(op))!!1)=="-l") && (length(words(op))==2)) then do
+	else if ( (head(words(op))=="fdisk") && (length(words(op))==2) && (((words(op))!!1)=="-l") ) then do
 		--putStrLn$ ""
 		listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused 0
 		
@@ -148,7 +148,14 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		else do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-					
+				
+	else if ( (head(words(op)) == "lvcreate") && (length(words(op)) == 6) && ((words(op)!!1) == "-L") && ((words(op)!!3) == "-n")) then do 
+		if((numberCheck ((words(op))!!2))) then do
+			putStrLn$"ok"
+		else do 
+			putStrLn$"The size must be an integer"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+			
 	else if (head(words(op)) == "ln") && (head(tail(words(op))) == "-s") && length(words(op))==4 then do
 		if (isNow 0 (head(tail(tail(words(op))))) xe) then do 
 			addFiles "-" xe (head(tail(tail(tail(words(op)))))) xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "-"):linklist) fslist unused
