@@ -27,8 +27,13 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	--putStrLn $ show linklist
+
+	--putStrLn $ show vglist
+	putStrLn $ show xe
+
 	putStrLn $ show vglist
 	--putStrLn $ show sdlist
+
 
 	op <- getLine
 	if  (op == "") then			--The sinstaxis must be correct
@@ -104,39 +109,44 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (head(words(op)) == "mkdir")&& ("/" `isInfixOf` (last(words(op))) ) == False  && (length(words(op))) == 2 then do
 		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-	else if op == "rm" then do
-		putStrLn "ingrese el nombre de la carpeta"
-		line <- getLine
-		rmFiles xe line xa 	userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op)) == "rmdir") && (length(words(op))) ==2  then do
+		rmFiles xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op)) == "rmdir") &&(head(tail(words(op)))) == "-rf" && (length(words(op))) == 3  then do
+		rmFiles xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
 		
-	else if op == "touch" then do
-		putStrLn "ingrese el nombre del archivo"
-		line <- getLine
-		addFiles "-" xe line xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-	else if op == "echo" then do
-		putStrLn "ingrese el archivo a modificar"
-		dir <- getLine
-		putStrLn "ingrese el contenido del archivo"
-		line <- getLine
-		echoFile xe xa line dir userGroupList userID sdlist vglist lvlist linklist fslist unused
-	else if op == "cat" then do
-		putStrLn "ingrese el archivo a ver"
-		dir <- getLine
-		catFile xe xa dir sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op))=="touch") && (length(words(op))) == 2 then do
+		addFiles "-" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	else if (head(words(op)) == "echo") && (head(tail(tail(words(op)))) == ">>") && (length(words(op))) == 4 then do
+		echoFile xe xa (head(tail(words(op)))) (last(words(op))) userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	else if (head(words(op))) == "cat" && (length(words(op))) == 2 then do
+		catFile xe xa (last(words(op))) sdlist vglist lvlist linklist fslist unused
 		
-	else if op == "ls" then do
-		putStrLn "buscando"
-		listFiles 0 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-	else if op == "mv" then do
-		putStrLn "Digite la carpte"
-		line <- getLine
-		moveDirectory line xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else if (head(words(op)) == "ls") && (length(words(op))) == 2 then do
+		putStrLn "con op"
+		listFiles (last(words(op))) 0 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	else if (head(words(op)) == "ls") && (length(words(op))) == 1 then do
+		putStrLn "sin op"
+		listFiles "none" 0 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	else if (head(words(op)) == "cd") && length(words(op))==2 then do
+		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "d") then do
+			putStrLn "moviendo"
+			moveDirectory (s(linklist!!(getLink 0 (head(tail(words(op)))) linklist) )) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do
+			moveDirectory (last(words(op))) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	
+	
 		
 	else if ( ((length(words(op))) >= 3 ) && (((words(op))!!0) == "vgcreate") ) then do
 		
 		if ( (alreadyVG 0 (tail(tail(words(op)))) xe) && (listHasLVM 0  (tail(tail(words(op)))) sdlist ) ) then do
 			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist (words(op)!!1) (tail(tail(words(op)))) (getSumOfStorage sdlist (tail(tail(words(op)))) 0 ) ) lvlist linklist fslist unused		
+			--body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist (words(op)!!1) (tail(tail(words(op)))) 100 ) lvlist linklist fslist unused		
 		else if (not (alreadyVG 0 (tail(tail(words(op)))) xe) ) then do 
 			putStrLn "Error creating VG, A volume does not exist"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -144,8 +154,9 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		else do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-				
-																		
+
+	--else if  ((length(words(op))) == 3 ) && (((words(op))!!0) == "vgextend")  then do
+	--	body xe xa userGroupList userID sdlist (vgExtend 0 vglist ((words(op))!!1) (last(words(op)))(getSize sdlist (last(words(op))) ) )  lvlist linklist fslist unused
 	else if ( (head(words(op)) == "lvcreate") && (length(words(op)) == 6) && ((words(op)!!1) == "-L") && ((words(op)!!3) == "-n")) then do 
 		if((numberCheck ((words(op))!!2))) then do
 			valueLogicalVolume xe xa userGroupList userID sdlist [] lvlist linklist fslist unused vglist ((words(op))!!2) ((words(op))!!4) ((words(op))!!5)
@@ -159,12 +170,7 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 			--body xe xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "d"):linklist) fslist unused 
 		else do
 			putStrLn "Nop"
-	else if (head(words(op)) == "cd") && length(words(op))==2 then do
-		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "d") then do
-			putStrLn "moviendo"
-			moveDirectory (s(linklist!!(getLink 0 (head(tail(words(op)))) linklist) )) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-		else do
-			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
 	else if (head(words(op)) == "echo") && length(words(op))==3 then do
 		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "-") then do
 			echoFile xe xa (head(tail(words(op)))) (s(linklist!!(getLink 0 (head(tail(tail(words(op))))) linklist) )) userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -272,7 +278,25 @@ isInVG cont sdList name = do
 			isInVG (cont + 1) sdList name
 	else do
 		False
-	
+getVG cont vgname vglist = do
+	if(cont < (length vglist) ) then do
+		if f(vglist !! cont) == vgname then do
+			cont 
+		else do
+			getVG (cont + 1) vgname vglist
+	else do
+		cont
+		{-
+vgExtend cont vglist vgname sdName size = do
+	if (cont < (length vglist)) then do
+		if (f(vglist!!cont)) == vgname then do
+			(take (getVG 0 vgname vglist) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop (getVG 0 vgname vglist ) vglist
+		else do
+			vgExtend (cont + 1) vglist vgname sdName size
+	else do
+		(take (getVG 0 vgname vglist) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop (getVG 0 vgname vglist ) vglist
+		-}
+		  	
 
 {-------------------------------User---Groups----------------------------------------}
 printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused= do
@@ -770,14 +794,17 @@ splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist lin
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
 
-listFiles cont  xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
+listFiles dir cont  xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	
 	if (cont < length xe) then do
-		if (f(head xe ) `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont)))  then do
+		if (f(head xe ) `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont))) && (dir =="none")  then do
 			putStrLn $ f(xe !! cont)
-			listFiles (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+			listFiles dir (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else if (dir `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont)))  then do
+			putStrLn $ f(xe !! cont)
+			listFiles dir (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		else do
-			listFiles (cont + 1 ) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+			listFiles dir (cont + 1 ) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do 
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
