@@ -28,6 +28,8 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do 
 
+	--putStrLn$ show lvlist
+	
 	op <- getLine
 	if  (op == "") then			--The sinstaxis must be correct
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
@@ -450,7 +452,7 @@ showAllVolumeGroup xe xa userGroupList userID sdlist vglist lvlist linklist fsli
 		showAllFSInfo xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist fslist
 	else do
 		putStrLn$( (show(f(toCheck!!0)))++"\t\t\t"++ (show(s(toCheck!!0)))++"\t\t\t\t"++(show(t(toCheck!!0)))++"\t\t\t"++(show(fo(toCheck!!0)))++"\t\t"++(show(fi(toCheck!!0)))++"\t\t\t"++(show(si(toCheck!!0)))++"\t\t\t\t"++(show(l(toCheck!!0))))
-
+		showAllVolumeGroup xe xa userGroupList userID sdlist (vglist++[head(toCheck)]) lvlist linklist fslist mplist (tail(toCheck))
 		
 showAllFSInfo xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do
 	if(null toCheck) then do 
@@ -530,7 +532,6 @@ addNewUserPrimary xe xa userID userGroupList toCheck j primary secondary name sd
 addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist vglist lvlist linklist fslist mplist= do
 	if( null secondary) then do
 		--body xe xa (userGroupList++toCheck) userID
-
 		addFiles ((((toCheck!!0)!!0)!!0)++":"++name) "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist mplist 	
 
 	else if (null toCheck) then do
@@ -779,10 +780,10 @@ removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist 
 		if ( ((fsToCheck!!0)!!1) == toRemove ) then do
 			if( ((fsToCheck!!0)!!2) == "LVM" ) then do
 				putStrLn$"Can't delete it, it has a LVM"
-				body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
+				body xe xa userGroupList userID sdlist vglist (lvlist++[listToDel]) linklist fslist mplist
 			else do 
 				putStrLn$"Can't delete it, it is used by a File System"
-				body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
+				body xe xa userGroupList userID sdlist vglist (lvlist++[listToDel]) linklist fslist mplist
 		else do
 			removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist listToDel toRemove (tail(fsToCheck)) 
 	
@@ -833,7 +834,7 @@ getLogicalListFor lvlist names ans = do
 			getLogicalListFor (tail(lvlist)) names (ans)
 -}			
 getPhysicalListFor plist names ans = do
-	putStrLn"ok"
+	putStrLn"ok11111"
 	
 showinfoLogical xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck logicalToPrint physicalToPrint = do
 	if (null logicalToPrint ) then do
@@ -869,8 +870,7 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist newSD newSize (i+1)
 	else do  				--call to create the path		The first name indicates if LVM 	The second one indicates if it belongs to a volume group
 
-		addFiles "user" "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist mplist
-		--body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+		addFiles "root:root" "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist mplist
 
 
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist i = do 
@@ -981,16 +981,23 @@ createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist fslist
 
 mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist path mountPointpath toCheck = do
 	if(null toCheck) then do 
-		putStrLn$"ok"
-		--body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
-		addFiles "root" "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist  
+		if( (isNow 0 path xe )) then do
+			addFiles (fi( xe!!(getElem 0 path xe))) "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist  
+		else do
+			putStrLn $"The path does not exit"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else do
 		if (((toCheck!!0)!!1)==path) then do
-			putStrLn$"ok"
-			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath (tail(toCheck))
+			if(length(toCheck)==1) then do 
+				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
+				--mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
+			else do 
+				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath (tail(toCheck))
 		else do 
-			(putStrLn$("ok"))
-			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
+			if( length(toCheck)==1) then do
+				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath []
+			else do 
+				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
 
 uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fslisttoCheck = do 
 	if(null fslisttoCheck) then do
@@ -998,14 +1005,17 @@ uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mpl
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else do
 		if( ((fslisttoCheck!!0)!!1)==toUnMount) then do --we found it
-			putStrLn$" the mount point does not exist"
+			--putStrLn$" the mount point does not exist"
 			deleteMountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++(tail(fslisttoCheck))) mplist toUnMount (head(fslisttoCheck))
 		else do
 			uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(fslisttoCheck)]) mplist toUnMount (tail(fslisttoCheck))
 			
 deleteMountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fsTounMount = do 
 	--delete the path that was mounted before
-	body xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(fsTounMount!!0),(fsTounMount!!1),"null"]]) mplist
+	if( (isNow 0 toUnMount xe )) then do
+		rmFiles xe toUnMount xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+	else do 
+		body xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(fsTounMount!!0),(fsTounMount!!1),"null"]]) mplist
 
 		
 
@@ -1059,34 +1069,34 @@ addFiles user mode xe add xa userGroupList userID sdlist vglist lvlist linklist 
 		--putStrLn $"Error creating the path: '"++(show(add))++"' already exist"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else if ("/" `isInfixOf` add )then do
-		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 	else if (f (head xe )) == "/" then do
-		body (xe ++ [(add ,f(head xe) ++ add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		body (xe ++ [(add ,f(head xe) ++ add,getDate now,getTime now time,user,"",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else do 
-		body (xe ++ [(add, s(head xe)++"/" ++ add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		body (xe ++ [(add, s(head xe)++"/" ++ add,getDate now,getTime now time,user,"",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 
-addFiles2 index mode modeT cont dir xe add xa userGroupList userID sdlist vglist lvlist linklist fslist mplist= do
+addFiles2 index mode modeT cont dir xe add xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user= do
 
 	now <- getCurrentTime
 	time <- getCurrentTimeZone
 	if (f (head xe )) == "/" then do
 		if (index == 0)then  do
-			splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,s(head xe) ++add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+			splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,s(head xe) ++add,getDate now,getTime now time,"root:root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 		else do
-			splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) , add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+			splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) , add,getDate now,getTime now time,user,"",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 	else do
-		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) , add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) , add,getDate now,getTime now time,user,"",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 
 		
-splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist= do
+splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user= do
 	if (cont == 0) then do
 		--putStrLn "s"
 
-		addFiles2 0 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		addFiles2 0 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 	else if (cont == (length dir)-1) && modeT == "-" then do
-		addFiles2 1 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		addFiles2 1 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 	else if (cont < length dir) && (cont /= 0) then do
-		addFiles2 1 "d" modeT cont dir xe (s(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		addFiles2 1 "d" modeT cont dir xe (s(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 
 	else
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
