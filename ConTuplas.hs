@@ -22,8 +22,9 @@ main:: IO()
 
 main = do 
 	now <- getCurrentTime
+	time <- getCurrentTimeZone
 	putStrLn "Inicio del File System"
-	body [("/","/",getDate now,"15:32","root:root","","d"),("/","/",getDate now,"15:32","root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
+	body [("/","/",getDate now,getTime now time,"root:root","","d"),("/","/",getDate now,getTime now time ,"root:root","","d")] [("","","")] [[["l1"],["1000"],["root" ],[] ], [["l2"],["1001"],[],[]]] [["root","1000"] ] [] [] [] [] [] []
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	putStrLn $ show linklist
@@ -106,17 +107,19 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		addLVMtodevice  xe xa userGroupList userID [] vglist lvlist linklist fslist unused ((words(op))!!1) sdlist False
 		
 	else if (head(words(op)) == "mkdir") &&(head(tail(words(op))) == "-p") && ("/" `isInfixOf` (last(words(op))) ) && (length(words(op))) == 3 then do
-		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		addFiles "user" "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (head(words(op)) == "mkdir")&& ("/" `isInfixOf` (last(words(op))) ) == False  && (length(words(op))) == 2 then do
-		addFiles "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		addFiles "user" "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (head(words(op)) == "rmdir") && (length(words(op))) ==2  then do
 		rmFiles xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (head(words(op)) == "rmdir") &&(head(tail(words(op)))) == "-rf" && (length(words(op))) == 3  then do
 		rmFiles xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-		
+	else if (head(words(op)) == "chown") && (length(words(op))) == 3  then do
+		body (chown (head(tail(words(op)))) (last(words(op))) xe ) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+			
 		
 	else if (head(words(op))=="touch") && (length(words(op))) == 2 then do
-		addFiles "-" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		addFiles "user" "-" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	
 	else if (head(words(op)) == "echo") && (head(tail(tail(words(op)))) == ">>") && (length(words(op))) == 4 then do
 		echoFile xe xa (head(tail(words(op)))) (last(words(op))) userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -131,6 +134,13 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	else if (head(words(op)) == "ls") && (length(words(op))) == 1 then do
 		putStrLn "sin op"
 		listFiles "none" 0 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+
+	else if (head(words(op)) == "ls") &&(head(tail(words(op))) == "-l")&& (length(words(op))) == 3 then do
+		putStrLn "con op"
+		listFilesDetail (last(words(op))) 0 xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		listLinks 0 "/" linklist
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+
 	
 	else if (head(words(op)) == "cd") && length(words(op))==2 then do
 		if (isLink 0 (head(tail(words(op)))) linklist) && (fi(linklist!!(getLink 0 (head(tail(words(op)))) linklist) ) == "d") then do
@@ -174,8 +184,10 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 			
 	else if (head(words(op)) == "ln") && (head(tail(words(op))) == "-s") && length(words(op))==4 then do
 		putStrLn $ show (head(tail(tail(words(op))))) 
-		if (isNow 0 (head(tail(tail(words(op))))) xe) then do 
-			addFiles "-" xe (head(tail(tail(tail(words(op)))))) xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "-"):linklist) fslist unused
+		if (isNow 0 (head(tail(tail(words(op))))) xe) then do
+			now <- getCurrentTime 
+			time <- getCurrentTimeZone
+			addFiles "user" (l(xe!! getElem 0 (head(tail(tail(words(op))))) xe )) xe (head(tail(tail(tail(words(op)))))) xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) (l(xe!! getElem 0 (head(tail(tail(words(op))))) xe ))       now time):linklist) fslist unused
 			--body xe xa userGroupList userID sdlist vglist lvlist ((linkCreate (head(tail(tail(words(op))))) (head(tail(tail(tail(words(op)))))) "d"):linklist) fslist unused 
 		else do
 			putStrLn "Nop"
@@ -194,8 +206,10 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 --updateVGstate usersToCheck sdlist = do
 	--actualizar el estado de utilziado por un VG a todos los storage device que reciba, ["","","",estado de VG]	
 {---------------}
-linkCreate pathReal pathLink typePath = do
-	(pathLink++"->"++pathReal,pathReal,pathLink,"",typePath,"l","") 
+
+linkCreate pathReal pathLink typePath fecha time = do
+	
+	(pathLink++"->"++pathReal,pathReal,pathLink,"l",typePath,getDate fecha,getTime fecha time) 
 
 	
 getLink cont name linklist = do
@@ -214,7 +228,14 @@ isLink cont name linklist = do
 			isLink (cont +1) name linklist 
 	else 
 		False
-
+listLinks cont dir linklist = do
+	if (cont < (length linklist)) then do
+			putStrLn $  "l" ++"   "++fo(linklist!!cont)++"   "++si(linklist!!cont)++"   "++l(linklist!!cont)++"    "++f(linklist!!cont)
+			listLinks (cont +1 ) dir linklist
+	else do 
+		putStr""	
+	
+	
 
 {---------------}
 			
@@ -430,7 +451,7 @@ addNewUserPrimary xe xa userID userGroupList toCheck j primary secondary name sd
 addNewUserSecondary xe xa userID userGroupList toCheck i k secondary name sdlist vglist lvlist linklist fslist unused= do
 	if( null secondary) then do
 		--body xe xa (userGroupList++toCheck) userID
-		addFiles "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused 	
+		addFiles "user" "d" xe ("home/"++name) xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused 	
 	else if (null toCheck) then do
 		putStrLn $ "A secondary does not exist"++name		
 		body xe xa (userGroupList++toCheck) userID sdlist vglist lvlist linklist fslist unused
@@ -672,7 +693,7 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 		else do		
 			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize (i+1)
 	else do  				--call to create the path		The first name indicates if LVM 	The second one indicates if it belongs to a volume group
-		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
+		addFiles "user" "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 		--body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
@@ -769,6 +790,11 @@ catFile xe xa dir sdlist vglist lvlist linklist fslist unused=do
 		putStrLn "No existe"
 	
 {------------------------------------------------Functions to manage the Path-----------------------------------------------------}
+--listFilesInfo
+
+chown newOwn fileName xe = do
+	(take (getElem 0 fileName xe) xe) ++[(f(xe!!(getElem 0 fileName xe)),s(xe!!(getElem 0 fileName xe)),t(xe!!(getElem 0 fileName xe)),fo(xe!!(getElem 0 fileName xe)),newOwn,si(xe!!(getElem 0 fileName xe)),l(xe!!(getElem 0 fileName xe)))]++(drop ((getElem 0 fileName xe)+1) xe)
+
 
 rmFiles xe dir xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	putStrLn $ show (isNow 0 dir xe)
@@ -797,7 +823,7 @@ isEmpty xe cont dir  = do
 	
 
 
-addFiles mode xe add xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
+addFiles user mode xe add xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	now <- getCurrentTime
 	time <- getCurrentTimeZone
 	if isNow 0 add xe then do
@@ -806,26 +832,29 @@ addFiles mode xe add xa userGroupList userID sdlist vglist lvlist linklist fslis
 	else if ("/" `isInfixOf` add )then do
 		splitAdd mode mode 0 (splitOn "/" add) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (f (head xe )) == "/" then do
-		body (xe ++ [(add ,f(head xe) ++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		body (xe ++ [(add ,f(head xe) ++ add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do 
-		body (xe ++ [(add, s(head xe)++"/" ++ add,getDate now,"Hora","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		body (xe ++ [(add, s(head xe)++"/" ++ add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
-addFiles2 mode modeT cont dir xe add xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
+addFiles2 index mode modeT cont dir xe add xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	now <- getCurrentTime
+	time <- getCurrentTimeZone
 	if (f (head xe )) == "/" then do
-		--putStrLn "d"
-		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,f(head xe) ++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		if (index == 0)then  do
+			splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,s(head xe) ++add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do
+			splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) , add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do
-		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) ,f(head xe) ++"/"++ add,getDate now,"time","root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		splitAdd mode modeT (cont + 1) dir (xe ++ [(last(splitOn "/" add) , add,getDate now,getTime now time,"root","",mode)]) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		
 splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if (cont == 0) then do
 		--putStrLn "s"
-		addFiles2 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		addFiles2 0 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (cont == (length dir)-1) && modeT == "-" then do
-		addFiles2 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		addFiles2 1 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else if (cont < length dir) && (cont /= 0) then do
-		addFiles2 "d" modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused	
+		addFiles2 1 "d" modeT cont dir xe (s(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist unused	
 	else
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
@@ -842,8 +871,25 @@ listFiles dir cont  xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 		else do
 			listFiles dir (cont + 1 ) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do 
+		
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 
+listFilesDetail dir cont  xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
+	
+	
+	if (cont < length xe) then do
+		if (f(head xe ) `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont))) && (dir =="none")  then do
+			putStrLn $  l(xe!!cont) ++"   "++fi(xe!!cont)++"   "++t(xe!!cont)++"   "++fo(xe!!cont)++"    "++f(xe !! cont)
+			listFilesDetail dir (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else if (dir `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont)))  then do
+			putStrLn $  l(xe!!cont) ++"   "++fi(xe!!cont)++"   "++t(xe!!cont)++"   "++fo(xe!!cont)++"    "++f(xe !! cont)
+			listFilesDetail dir (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+		else do
+			listFilesDetail dir (cont + 1 ) xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do 
+		putStr ""
+		
+		--body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 moveDirectory dir xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused= do
 	if dir == ".." then do
 		putStrLn "retroceder"
@@ -886,7 +932,7 @@ isNow cont dir xe = do
 getDate now = do
 	show(sd(toGregorian $ utctDay now))++"/"++show(td(toGregorian $ utctDay now))++"/"++show(fd(toGregorian $ utctDay now))
 getTime now time = do
-	localTimeOfDay $ utcToLocalTime time now
+	(splitOn ":" (show(localTimeOfDay $ utcToLocalTime time now))) !!0++":" ++(splitOn ":" (show(localTimeOfDay $ utcToLocalTime time now))) !!1
 	
 
 
