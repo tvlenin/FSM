@@ -27,10 +27,8 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	--putStrLn $ show linklist
-
 	--putStrLn $ show vglist
-	putStrLn $ show xe
-
+	--putStrLn $ show xe
 	putStrLn $ show vglist
 	--putStrLn $ show sdlist
 
@@ -163,6 +161,12 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 		else do 
 			putStrLn$"The size must be an integer"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	
+	else if ( (length(words(op)))==1 && ((((words(op))!!0)=="vgdisplay" ) || ((words(op))!!0)=="vgs" )) then do
+		showInfoOfVG xe xa userGroupList userID sdlist [] lvlist linklist fslist unused vglist
+		
+	else if ( (length(words(op)))==2 && (((words(op))!!0)=="vgdisplay"|| ((words(op))!!0)=="vgs" )  && (((words(op))!!1)=="-v") ) then do
+		showMoreInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused	vglist
 			
 	else if (head(words(op)) == "ln") && (head(tail(words(op))) == "-s") && length(words(op))==4 then do
 		if (isNow 0 (head(tail(tail(words(op))))) xe) then do 
@@ -227,7 +231,7 @@ alreadyVG cont aList xe = do
 		True
 
 addVolumeGroups cont volumeList vgName listpv size = do
-	(volumeList ++ [(vgName,listpv,(length (listpv)), 0,[""],size,size)])
+	(volumeList ++ [(vgName,listpv,(length (listpv)), 0,[],size,size)])
 	
 	
 getSumOfStorage sdlist names answer= do
@@ -619,18 +623,87 @@ valueLogicalVolume xe xa userGroupList userID sdlist vglist lvlist linklist fsli
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 	else do 
 		if ( f(toCheck!!0) == vgName ) then do
-			putStrLn$"espacio disponible :  "++(show((si(toCheck!!0))))
-			putStrLn$"espacio que pido :  "++(show(getIntegerFrom size 0 0))
 			if( (si(toCheck!!0)) >= (getIntegerFrom size 0 0) ) then do
 				--[(f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((s(toCheck!!0))++[volName]),(si(toCheck!!0)), ((l(toCheck!!0))-size) ] 
-				body xe xa userGroupList userID sdlist (vglist ++ [( (f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((s(toCheck!!0))++[volName]),(si(toCheck!!0)),  ( (l(toCheck!!0)) - (getIntegerFrom size 0 0))   )]  ++(tail(toCheck))) lvlist linklist fslist unused
+				body xe xa userGroupList userID sdlist (vglist ++ [( (f(toCheck!!0)),(s(toCheck!!0)),(t(toCheck!!0)),((fo(toCheck!!0))+1),((fi(toCheck!!0))++[volName]),(si(toCheck!!0)),  ( (l(toCheck!!0)) - (getIntegerFrom size 0 0))   )]  ++(tail(toCheck))) (lvlist++[volName,size,vgName]) linklist fslist unused
 			else do
 				putStrLn "Not enough space"
-				body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+				body xe xa userGroupList userID sdlist (vglist++toCheck) lvlist linklist fslist unused
 		else do
 			valueLogicalVolume xe xa userGroupList userID sdlist (vglist++[head(toCheck)]) lvlist linklist fslist unused (tail(toCheck)) size volName vgName
 
+showInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck= do
+	if(null toCheck) then do
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do 
+		putStrLn$"----- Volume group -----"
+		putStrLn$"VG name \t\t\t"++(show((f(toCheck!!0))))
+		putStrLn$"Cur LV \t\t\t"++(show((fo(toCheck!!0))))
+		putStrLn$"Cur PV \t\t\t"++(show((t(toCheck!!0))))
+		putStrLn$"VG size \t\t\t"++(show((si(toCheck!!0))))++" MiB"
+		putStrLn$"Free size \t\t\t"++(show((l(toCheck!!0))))++" MiB"
+		
+		showInfoOfVG xe xa userGroupList userID sdlist (vglist++[head(toCheck)]) lvlist linklist fslist unused (tail(toCheck))
+		
+		
+		
+showMoreInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck= do
+	if(null toCheck) then do 
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
+	else do
+		putStrLn$"----- Volume group -----"
+		putStrLn$"VG name \t\t\t"++(show((f(toCheck!!0))))
+		putStrLn$"Cur LV \t\t\t"++(show((fo(toCheck!!0))))
+		putStrLn$"Cur PV \t\t\t"++(show((t(toCheck!!0))))
+		putStrLn$"VG size \t\t\t"++(show((l(toCheck!!0))))++" MiB"
+		putStrLn$"Free size \t\t\t"++(show((si(toCheck!!0))))++" MiB"
+		
+		putStrLn$"-----Logical volumes -----"
+		putStrLn $ show(fi(toCheck!!0))
+		
+		putStrLn$"-----Physical volumes -----"
+		putStrLn $ (show ( s(toCheck!!0)))
+		showMoreInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (tail(toCheck))
+--		showinfoLogical xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck (getLogicalListFor lvlist (fi(toCheck!!0)) []) []
+
+getLogicalListFor lvlist names ans = do
+--	putStrLn$"ok"
+  --  s <- ((lvlist!!0)!!0)
+	if(null lvlist) then do
+		ans
+	else do 
+		if( s == names ) then do 
+			getLogicalListFor (tail(lvlist)) names (ans++[head(lvlist)])		 
+		else do 
+			getLogicalListFor (tail(lvlist)) names (ans)
+			
+getPhysicalListFor plist names ans = do
+	putStrLn"ok"
+	
+showinfoLogical xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck logicalToPrint physicalToPrint = do
+	if (null logicalToPrint ) then do
+		showinfoPhysical xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck logicalToPrint physicalToPrint
+	else do
+		--putStrLn$(show(lvlist))
+		putStrLn$"----- Logical volume -----"
+		putStrLn$"LV path \t\t\t"
+		putStrLn$"LV name \t\t\t"
+		putStrLn$"VG name \t\t\t"
+		putStrLn$"LV size \t\t\t"
+		putStrLn$"      -----     "
+		showinfoLogical xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck (tail(logicalToPrint)) physicalToPrint
+		
+showinfoPhysical xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck logicalToPrint physicalToPrint = do
+	if(null physicalToPrint) then do
+		showMoreInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (tail(toCheck))
+	else do
+		putStrLn$"----- Physical volume -----"
+		putStrLn$"PV name \t\t\t"
+		putStrLn$"Total size \t\t\t"
+		putStrLn$"      -----     "
+		showinfoPhysical xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused toCheck logicalToPrint (tail(physicalToPrint))
 			 
+			
 {------------------------------------------------Functions to storage device--------------------------------------------------------}
 createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize i= do
 	if( i <= ((length(sdlist))-1)) then do
@@ -646,7 +719,7 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
 	if(i <= ((length(sdlist))-1) ) then do 
 		if( ((sdlist!!i)!!2)=="LVM" ) then do
-			putStrLn $ "Disk "++((sdlist!!i)!!0)++": "++((sdlist!!i)!!1)++"MiB Managed by: LVM"
+			putStrLn $ "Disk "++((sdlist!!i)!!0)++": "++((sdlist!!i)!!1)++" MiB Managed by: LVM"
 			listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused (i+1)
 		else do
 			putStrLn $ "Disk "++((sdlist!!i)!!0)++": "++((sdlist!!i)!!1)
@@ -703,7 +776,7 @@ getSize sdlist name = do
 		0
 	else
 		if ( ((sdlist!!0)!!0) == name ) then do
-			((sdlist!!0)!!1)
+			getIntegerFrom ((sdlist!!0)!!1) 0 0
 		else do
 			getSize (tail(sdlist)) name
 
