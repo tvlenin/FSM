@@ -985,20 +985,26 @@ mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplis
 		if( (isNow 0 path xe )) then do
 			addFiles (fi( xe!!(getElem 0 path xe))) "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist  
 		else do
-			putStrLn $"The path does not exit"
+			--putStrLn $"The path does not exit"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+			addFiles (fi( xe!!(getElem 0 path xe))) "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else do
 		if (((toCheck!!0)!!1)==path) then do
 			putStrLn $ show mountPointpath
 			if(length(toCheck)==1) then do 
+				putStrLn$"SIII"
+				putStrLn$show(mountPointpath)
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
 				--mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
 			else do 
+				putStrLn"largo"
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath (tail(toCheck))
 		else do 
 			if( length(toCheck)==1) then do
+				putStrLn"1"
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath []
 			else do 
+				putStrLn"2"
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
 
 uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fslisttoCheck = do 
