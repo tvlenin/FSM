@@ -739,21 +739,21 @@ removelogicalVolume xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 		body xe xa userGroupList userID sdlist vglist (lvlist) linklist fslist mplist
 	else do
 		if ( ((toCheck!!0)!!0) == toRemove ) then do
-			putStrLn"borrando"
 			removeLV xe xa userGroupList userID sdlist vglist (lvlist++tail(toCheck)) linklist fslist mplist (head(toCheck)) toRemove fslist
 		else do
-			putStrLn"borrando"
 			removelogicalVolume xe xa userGroupList userID sdlist vglist (lvlist++[head(toCheck)]) linklist fslist mplist (tail(toCheck)) toRemove
 	
 removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist listToDel toRemove fsToCheck = do 
 	if(null fsToCheck) then do
-		--a boorar
-		putStrLn"borrado"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist 
 	else do 
 		if ( ((fsToCheck!!0)!!1) == toRemove ) then do
-			putStrLn$"Can't delete it, it is used by a File System"
-			body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
+			if( ((fsToCheck!!0)!!2) == "LVM" ) then do
+				putStrLn$"Can't delete it, it has a LVM
+				body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
+			else do 
+				putStrLn$"Can't delete it, it is used by a File System"
+				body xe xa userGroupList userID sdlist vglist (lvlist++[[toRemove]]) linklist fslist mplist
 		else do
 			removeLV xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist listToDel toRemove (tail(fsToCheck)) 
 	
