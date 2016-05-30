@@ -448,7 +448,7 @@ showAllDeviceFirst xe xa userGroupList userID sdlist vglist lvlist linklist fsli
 showAllVolumeGroup xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck = do
 	if (null toCheck) then do 
 		putStrLn$"---------------------------------------------------------------------------------------------------"
-		putStrLn$"File System \t Type \t mount point"
+		putStrLn$"Type \t FileSystem \t mount point"
 		showAllFSInfo xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist fslist
 	else do
 		putStrLn$( (show(f(toCheck!!0)))++"\t\t\t"++ (show(s(toCheck!!0)))++"\t\t\t\t"++(show(t(toCheck!!0)))++"\t\t\t"++(show(fo(toCheck!!0)))++"\t\t"++(show(fi(toCheck!!0)))++"\t\t\t"++(show(si(toCheck!!0)))++"\t\t\t\t"++(show(l(toCheck!!0))))
@@ -796,8 +796,8 @@ showInfoOfVG xe xa userGroupList userID sdlist vglist lvlist linklist fslist mpl
 		putStrLn$"VG name \t\t\t"++(show((f(toCheck!!0))))
 		putStrLn$"Cur LV \t\t\t"++(show((fo(toCheck!!0))))
 		putStrLn$"Cur PV \t\t\t"++(show((t(toCheck!!0))))
-		putStrLn$"VG size \t\t\t"++(show((si(toCheck!!0))))++" MiB"
-		putStrLn$"Free size \t\t\t"++(show((l(toCheck!!0))))++" MiB"
+		putStrLn$"Free size \t\t\t"++(show((si(toCheck!!0))))++" MiB"
+		putStrLn$"VG size \t\t\t"++(show((l(toCheck!!0))))++" MiB"
 		
 		showInfoOfVG xe xa userGroupList userID sdlist (vglist++[head(toCheck)]) lvlist linklist fslist mplist (tail(toCheck))
 		
@@ -973,6 +973,7 @@ createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist fslist
 	else do
 		if ((toCheck!!0)!!0== path) then do
 			putStrLn"It already exist"
+			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 		else 	
 			createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist exttype path (tail(toCheck))
 
@@ -988,6 +989,7 @@ mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplis
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else do
 		if (((toCheck!!0)!!1)==path) then do
+			putStrLn $ show mountPointpath
 			if(length(toCheck)==1) then do 
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
 				--mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
