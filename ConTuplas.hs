@@ -109,6 +109,9 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do
 	else if ( (length(words(op)))==3 && ((words(op))!!0)=="mount" ) then do
 		mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist ((words(op))!!1) ((words(op))!!2) fslist
 		
+	else if ( (length(words(op)))==2 && ((words(op))!!0)=="unmount" ) then do
+		uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist ((words(op))!!1) fslist
+		
 	else if ( (length(words(op)))==2 && ((words(op))!!0)=="df"  && ((words(op))!!1)=="-h" ) then do
 		putStrLn$"FileSystem \t\t\t type \t\t\t Mounted on"
 		showFileSystemOut xe xa userGroupList userID sdlist vglist lvlist linklist [] mplist fslist
@@ -950,7 +953,8 @@ createFileSystem xe xa userGroupList userID sdlist vglist lvlist linklist fslist
 
 mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist path mountPointpath toCheck = do
 	if(null toCheck) then do 
-		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		--body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		addFiles "d" xe mountPointpath xa userGroupList userID sdlist vglist lvlist linklist fslist mplist  
 	else do
 		if (((toCheck!!0)!!1)==path) then do
 			--putStrLn$"ok"
@@ -959,7 +963,22 @@ mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplis
 			--(putStrLn$("ok"))
 			mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
 
+uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fslisttoCheck = do 
+	if(null fslisttoCheck) then do
+		putStrLn$" the mount point does not exist"
+		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+	else do
+		if( ((fslisttoCheck!!0)!!1)==toUnMount) then do --we found it
+			putStrLn$" the mount point does not exist"
+			deleteMountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++(tail(fslisttoCheck))) mplist toUnMount (head(fslisttoCheck))
+		else do
+			uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(fslisttoCheck)]) mplist toUnMount (tail(fslisttoCheck))
+			
+deleteMountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fsTounMount = do 
+	--delete the path that was mounted before
+	body xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(fsTounMount!!0),(fsTounMount!!1),"null"]]) mplist
 
+		
 
 showFileSystemOut xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toCheck= do
 	if(null toCheck) then do
