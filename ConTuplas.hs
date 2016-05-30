@@ -992,19 +992,14 @@ mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplis
 		if (((toCheck!!0)!!1)==path) then do
 			putStrLn $ show mountPointpath
 			if(length(toCheck)==1) then do 
-				putStrLn$"SIII"
-				putStrLn$show(mountPointpath)
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
 				--mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath []
 			else do 
-				putStrLn"largo"
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[[(((toCheck!!0)!!0)),(((toCheck!!0)!!1)),mountPointpath]]) mplist path mountPointpath (tail(toCheck))
 		else do 
 			if( length(toCheck)==1) then do
-				putStrLn"1"
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath []
 			else do 
-				putStrLn"2"
 				mountPoint xe xa userGroupList userID sdlist vglist lvlist linklist (fslist++[head(toCheck)]) mplist path mountPointpath (tail(toCheck))
 
 uNmountPoint xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist toUnMount fslisttoCheck = do 
