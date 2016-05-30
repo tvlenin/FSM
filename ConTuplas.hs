@@ -27,8 +27,13 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do 
 	--putStrLn $ show linklist
+
 	--putStrLn $ show vglist
 	putStrLn $ show xe
+
+	putStrLn $ show vglist
+	putStrLn $ show sdlist
+
 
 	op <- getLine
 	if  head(words(op)) == "print" then			--The sinstaxis must be correct
@@ -82,7 +87,6 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 				
 	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (numberCheck ((words(op))!!2))) then do
 		createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused ((words(op))!!3) ((words(op))!!2) 0
-
 	else if ( (head(words(op))=="createdev") && (((words(op))!!1)=="-s") && (length(words(op))==4) && (not(numberCheck ((words(op))!!2)))) then do
 		putStrLn$"Size must be an integer"
 		body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
@@ -137,20 +141,20 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused = do
 	
 	
 		
-	else if op == "vgcreate" then do
-		name <- getLine
-		list <- getLine
-		if (alreadyVG 0 (splitOn " "list) xe) && (listHasLVM 0 (splitOn " " list) sdlist ) then do
-			--body xe xa userGroupList userID (updateVGstate (splitOn " " list) sdlist) (addVolumeGroups 0 vglist name (splitOn " " list) 1000) lvlist linklist fslist unused
-			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist name (splitOn " " list) 1000) lvlist linklist fslist unused		
-		else if (not (alreadyVG 0 (splitOn " "list) xe) ) then do 
+	else if ( ((length(words(op))) >= 3 ) && (((words(op))!!0) == "vgcreate") ) then do
+		
+		if ( (alreadyVG 0 (tail(tail(words(op)))) xe) && (listHasLVM 0  (tail(tail(words(op)))) sdlist ) ) then do
+		--putStrLn $ ("El tamaño es:  "  ++((getSumOfStorage sdlist (tail(tail(words(op)))))) )
+			body xe xa userGroupList userID sdlist (addVolumeGroups 0 vglist (words(op)!!1) (tail(tail(words(op)))) 100 ) lvlist linklist fslist unused		
+		else if (not (alreadyVG 0 (tail(tail(words(op)))) xe) ) then do 
 			putStrLn "Error creating VG, A volume does not exist"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
 		-- add the error for a volume that belongs to a VG
 		else do
 			putStrLn "Error creating VG, a volume has not a LVM"
 			body xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused
-				
+	--else if  ((length(words(op))) == 3 ) && (((words(op))!!0) == "vgextend")  then do
+	--	body xe xa userGroupList userID sdlist (vgExtend 0 vglist ((words(op))!!1) (last(words(op)))(getSize sdlist (last(words(op))) ) )  lvlist linklist fslist unused
 	else if ( (head(words(op)) == "lvcreate") && (length(words(op)) == 6) && ((words(op)!!1) == "-L") && ((words(op)!!3) == "-n")) then do 
 		if((numberCheck ((words(op))!!2))) then do
 			putStrLn$"ok"
@@ -219,9 +223,37 @@ alreadyVG cont aList xe = do
 			alreadyVG (cont+1) aList xe
 	else do
 		True
+
 addVolumeGroups cont volumeList vgName listpv size = do
-	(volumeList ++ [(vgName,listpv,length listpv,0,[""],size,size)])
+	(volumeList ++ [(vgName,listpv,(length (listpv)), 0,[""],size,size)])
 	
+	
+getSumOfStorage sdlist names answer= do
+	if (null sdlist) then do
+		answer
+	else do
+		if(elem (((sdlist)!!0)!!0) names) then do
+			getSumOfStorage (tail(sdlist)) names (answer+((sdlist!!0)!!1))
+		else do 
+			getSumOfStorage (tail(sdlist)) names answer
+
+
+{-getSumOfStorage sdlist names = do 
+	if(null names) then do
+		0
+	else do
+		(sizeByThis sdlist (head(names)) 0) + (getSumOfStorage sdlist (tail(names)) )
+			
+sizeByThis sdlist name i= do
+	if( i <= ((length(sdlist))-1) ) then 
+		if( ((sdlist!!i)!!0) == name ) then do 
+			((sdlist!!i)!!1)
+		else do
+			sizeByThis sdlist name (i+1)
+	else do	
+		0
+-}
+
 haveStorage cont vglist sdName = do
 	if (cont < (length vglist)) then do
 		if (isInVG 0 (s(vglist!!cont)) sdName) then do
@@ -240,7 +272,25 @@ isInVG cont sdList name = do
 			isInVG (cont + 1) sdList name
 	else do
 		False
-	
+getVG cont vgname vglist = do
+	if(cont < (length vglist) ) then do
+		if f(vglist !! cont) == vgname then do
+			cont 
+		else do
+			getVG (cont + 1) vgname vglist
+	else do
+		cont
+		{-
+vgExtend cont vglist vgname sdName size = do
+	if (cont < (length vglist)) then do
+		if (f(vglist!!cont)) == vgname then do
+			(take (getVG 0 vgname vglist) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop (getVG 0 vgname vglist ) vglist
+		else do
+			vgExtend (cont + 1) vglist vgname sdName size
+	else do
+		(take (getVG 0 vgname vglist) vglist ) ++ [(vgname,s(vglist!!cont) ++ [sdName],t(vglist!!cont) + 1,fo(vglist!!cont),fi(vglist!!cont),si(vglist!!cont) + size,l(vglist!!cont) + size  )]++drop (getVG 0 vgname vglist ) vglist
+		-}
+		  	
 
 {-------------------------------User---Groups----------------------------------------}
 printuserg xe xa userID userGroupList sdlist vglist lvlist linklist fslist unused= do
@@ -565,7 +615,7 @@ createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fsl
 		else do		
 			createStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused newSD newSize (i+1)
 	else do  				--call to create the path		The first name indicates if LVM 	The second one indicates if it belongs to a volume group
-		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null","null"]]) vglist lvlist linklist fslist unused
+		addFiles "d" xe newSD xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 		--body xe xa userGroupList userID (sdlist++[[newSD,newSize,"null"]]) vglist lvlist linklist fslist unused
 
 listStorageDevice xe xa userGroupList userID sdlist vglist lvlist linklist fslist unused i = do 
