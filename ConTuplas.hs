@@ -28,7 +28,7 @@ main = do
 
 body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do 
 
-	--putStrLn$ show lvlist
+	putStrLn$ show xe
 	
 	op <- getLine
 	if  (op == "") then			--The sinstaxis must be correct
@@ -123,7 +123,7 @@ body xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist = do
 	else if (head(words(op)) == "mkdir") &&(head(tail(words(op))) == "-p") && ("/" `isInfixOf` (last(words(op))) ) && (length(words(op))) == 3 then do
 		addFiles "user" "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 	else if (head(words(op)) == "mkdir")&& ("/" `isInfixOf` (last(words(op))) ) == False  && (length(words(op))) == 2 then do
-		addFiles "user" "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
+		addFiles (fi(head xe)) "d" xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 
 	else if (head(words(op)) == "rmdir") && (length(words(op))) ==2  then do
 		rmFiles xe (last(words(op))) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
@@ -941,9 +941,9 @@ getSize sdlist name = do
 {------------------------------------------------Functions to manage Files--------------------------------------------------------}
 echoFile xe xa doc dir userGroupList userID sdlist vglist lvlist linklist fslist mplist= do
 	putStrLn $ show ("/"++ dir)
-	putStrLn $ show (isNow 0 ("/"++ dir) xe)
+	putStrLn $ show (isNow 0 (dir) xe)
 	putStrLn $ show (l(xe !! ((getElem 0 dir xe)))  == "-")
-	if (isNow 0 ("/"++ dir) xe) && (l(xe !! ((getElem 0 dir xe))) ) == "-" then do
+	if (isNow 0 (dir) xe) && (l(xe !! ((getElem 0 dir xe))) ) == "-" then do
 		--putStrLn $ show((getElem 0 dir xe))
 		let tuple = (f(xe !! (getElem 0 dir xe)),s(xe !! (getElem 0 dir xe)),t(xe !! (getElem 0 dir xe)),fo(xe !! (getElem 0 dir xe)),fi(xe !! (getElem 0 dir xe)),doc,l(xe !! (getElem 0 dir xe)))
 		body ((fhalf 0 xe (getElem 0 dir xe) []) ++ [tuple] ++(shalf ((getElem 0 dir xe)+1) xe (getElem 0 dir xe) []))  xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
@@ -1096,7 +1096,7 @@ splitAdd mode modeT cont dir xe xa userGroupList userID sdlist vglist lvlist lin
 
 		addFiles2 0 "d" modeT cont dir xe (dir !! 0) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 	else if (cont == (length dir)-1) && modeT == "-" then do
-		addFiles2 1 modeT modeT cont dir xe (f(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
+		addFiles2 1 modeT modeT cont dir xe (s(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 	else if (cont < length dir) && (cont /= 0) then do
 		addFiles2 1 "d" modeT cont dir xe (s(last xe)++"/"++ (dir !! cont)) xa userGroupList userID sdlist vglist lvlist linklist fslist mplist user
 
@@ -1124,10 +1124,10 @@ listFilesDetail dir cont  xe xa userGroupList userID sdlist vglist lvlist linkli
 	
 	if (cont < length xe) then do
 		if (f(head xe ) `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont))) && (dir =="none")  then do
-			putStrLn $  l(xe!!cont) ++"   "++fi(xe!!cont)++"   "++t(xe!!cont)++"   "++fo(xe!!cont)++"    "++f(xe !! cont)
+			putStrLn $  l(xe!!cont) ++"   "++fi(xe!!cont)++"   "++t(xe!!cont)++"   "++fo(xe!!cont)++"    "++s(xe !! cont)
 			listFilesDetail dir (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 		else if (dir `isInfixOf` s(xe !! cont)) && (f( xe !! 2) /= s(xe !! (cont)))  then do
-			putStrLn $  l(xe!!cont) ++"   "++fi(xe!!cont)++"   "++t(xe!!cont)++"   "++fo(xe!!cont)++"    "++f(xe !! cont)
+			putStrLn $  l(xe!!cont) ++"   "++fi(xe!!cont)++"   "++t(xe!!cont)++"   "++fo(xe!!cont)++"    "++s(xe !! cont)
 			listFilesDetail dir (cont + 1) xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
 		else do
 			listFilesDetail dir (cont + 1 ) xe xa userGroupList userID sdlist vglist lvlist linklist fslist mplist
